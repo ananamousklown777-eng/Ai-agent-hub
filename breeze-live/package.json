@@ -1,0 +1,13 @@
+{
+  "name": "breeze-live",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Secure AI backend for the Breeze Live prototype",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "openai": "^5.0.0"
+  }
+}
