@@ -7,7 +7,7 @@
 <style>
 body{margin:0;font-family:system-ui,sans-serif;background:#0b1020;color:#fff;min-height:100vh;display:grid;place-items:center}
 main{width:min(900px,92vw);text-align:center}.avatar{width:220px;height:220px;border-radius:50%;margin:20px auto;background:radial-gradient(circle at 35% 30%,#fff,#9ee7ff 20%,#6c63ff 55%,#151a45);box-shadow:0 0 60px #6c63ff88;display:grid;place-items:center;font-size:70px}
-.live{display:inline-block;padding:7px 14px;border-radius:20px;background:#e53935;font-weight:700}.panel{margin-top:24px;background:#151b31;border-radius:18px;padding:20px;text-align:left}.msg{padding:10px 0;border-bottom:1px solid #ffffff18}.input{display:flex;gap:10px;margin-top:16px}.input input{flex:1;padding:14px;border-radius:10px;border:0}.input button{padding:14px 18px;border:0;border-radius:10px;font-weight:700}
+.live{display:inline-block;padding:7px 14px;border-radius:20px;background:#e53935;font-weight:700}.panel{margin-top:24px;background:#151b31;border-radius:18px;padding:20px;text-align:left}.msg{padding:10px 0;border-bottom:1px solid #ffffff18}.input{display:flex;gap:10px;margin-top:16px}.input input{flex:1;padding:14px;border-radius:10px;border:0}.input button{padding:14px 18px;border:0;border-radius:10px;font-weight:700}.status{margin-top:12px;font-size:13px;opacity:.7}
 </style>
 </head>
 <body>
@@ -18,14 +18,81 @@ main{width:min(900px,92vw);text-align:center}.avatar{width:220px;height:220px;bo
 <p>AI Agent Hub live host prototype</p>
 <section class="panel">
 <strong>Audience</strong>
-<div class="msg">Breeze: Welcome. I'm Breeze, an AI host from AI Agent Hub.</div>
+<div class="msg"><b>Breeze:</b> Welcome. I'm Breeze, an AI host from AI Agent Hub.</div>
 <div id="messages"></div>
-<div class="input"><input id="text" placeholder="Type an audience message…"><button onclick="send()">Send</button></div>
+<div class="input">
+<input id="text" placeholder="Type an audience message…" autocomplete="off">
+<button id="send">Send</button>
+</div>
+<div id="status" class="status">AI backend: checking…</div>
 </section>
 </main>
 <script>
-function send(){const i=document.getElementById('text');const v=i.value.trim();if(!v)return;const m=document.getElementById('messages');m.insertAdjacentHTML('beforeend','<div class="msg"><b>Viewer:</b> '+escapeHtml(v)+'</div><div class="msg"><b>Breeze:</b> Thanks for joining the live! AI response integration will be connected next.</div>');i.value='';}
-function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+const input=document.getElementById("text");
+const messages=document.getElementById("messages");
+const status=document.getElementById("status");
+const sendButton=document.getElementById("send");
+
+function addMessage(who,text){
+  const div=document.createElement("div");
+  div.className="msg";
+  const strong=document.createElement("b");
+  strong.textContent=who+":";
+  div.appendChild(strong);
+  div.appendChild(document.createTextNode(" "+text));
+  messages.appendChild(div);
+  messages.scrollIntoView({behavior:"smooth",block:"end"});
+}
+
+async function checkBackend(){
+  try{
+    const r=await fetch("/api/health");
+    if(!r.ok) throw new Error();
+    status.textContent="AI backend: connected";
+  }catch{
+    status.textContent="AI backend: not connected yet. The backend must be deployed separately from GitHub Pages.";
+  }
+}
+
+async function send(){
+  const value=input.value.trim();
+  if(!value)return;
+  addMessage("Viewer",value);
+  input.value="";
+  sendButton.disabled=true;
+  status.textContent="Breeze is thinking…";
+  try{
+    const r=await fetch("/api/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:value})
+    });
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"Request failed");
+    addMessage("Breeze",data.reply);
+    speak(data.reply);
+    status.textContent="AI backend: connected";
+  }catch(error){
+    addMessage("Breeze","I'm not connected to my AI backend yet. The secure server needs to be deployed first.");
+    status.textContent=error.message;
+  }finally{
+    sendButton.disabled=false;
+    input.focus();
+  }
+}
+
+function speak(text){
+  if(!("speechSynthesis" in window))return;
+  window.speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.rate=1;
+  utterance.pitch=1;
+  window.speechSynthesis.speak(utterance);
+}
+
+sendButton.addEventListener("click",send);
+input.addEventListener("keydown",e=>{if(e.key==="Enter")send();});
+checkBackend();
 </script>
 </body>
 </html>
