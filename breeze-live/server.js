@@ -60,6 +60,12 @@ function remember(sessionId, role, content) {
 function freeModeReply(message, history) {
   const lower = message.toLowerCase();
 
+  if (lower.includes("what did i just ask") || lower.includes("what did i ask")) {
+    const previous = [...history].reverse().find(item => item.role === "user" && item.content !== message);
+    return previous
+      ? `You just asked me: "${previous.content}"`
+      : "You haven't asked me anything else in this session yet.";
+  }
   if (/^(hi|hello|hey)\b/.test(lower)) {
     return "Hey! I'm Breeze. I'm running in free test mode right now, but the Breeze Live system is working.";
   }
@@ -133,10 +139,7 @@ const server = http.createServer(async (req, res) => {
       const response = await client.responses.create({
         model,
         instructions: systemPrompt,
-        input: [
-          ...history.map(item => ({ role: item.role, content: item.content })),
-          { role: "user", content: message }
-        ],
+        input: history.map(item => ({ role: item.role, content: item.content })),
         max_output_tokens: 180
       });
 
