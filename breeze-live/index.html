@@ -11,7 +11,7 @@ main{width:min(760px,94vw);margin:0 auto;padding:28px 0 40px}
 header{text-align:center;padding:18px 0 22px}
 .badge{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:#e53935;font-size:12px;font-weight:800;letter-spacing:.5px}
 .dot{width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff}
-.avatar{width:min(330px,78vw);height:330px;border-radius:28px;overflow:visible;position:relative;margin:24px auto 16px;background:#080d1c;box-shadow:0 18px 60px #0009,0 0 35px #6c63ff55;transition:transform .2s ease,box-shadow .2s ease}.avatar img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 28%;border-radius:28px;position:relative;z-index:1}.avatar.speaking{animation:breezePulse .48s ease-in-out infinite alternate;box-shadow:0 20px 80px #000a,0 0 35px #9ee7ff88,0 0 85px #756cff66}.avatar.speaking::after{content:"";position:absolute;inset:-10px;border:4px solid #9ee7ffcc;border-radius:38px;animation:breezeRing .9s ease-out infinite;pointer-events:none;z-index:0}.avatar.speaking::before{content:"▂ ▅ █ ▅ ▂";position:absolute;left:50%;bottom:-14px;width:150px;height:30px;transform:translateX(-50%);border-radius:999px;background:#10172b;border:2px solid #9ee7ff99;color:#9ee7ff;font-size:18px;line-height:25px;text-align:center;letter-spacing:3px;opacity:1;animation:breezeBars .32s ease-in-out infinite alternate;z-index:3;box-shadow:0 0 20px #9ee7ff66}@keyframes breezePulse{from{transform:scale(1)}to{transform:scale(1.045)}}@keyframes breezeRing{from{opacity:1;transform:scale(.98)}to{opacity:0;transform:scale(1.08)}}@keyframes breezeBars{from{transform:translateX(-50%) scaleY(.65)}to{transform:translateX(-50%) scaleY(1.12)}}h1{margin:0;font-size:42px;letter-spacing:-1px}
+.avatar{width:min(560px,92vw);height:min(420px,68vw);min-height:330px;border-radius:28px;overflow:visible;position:relative;margin:24px auto 16px;background:#080d1c;box-shadow:0 18px 60px #0009,0 0 35px #6c63ff55;transition:transform .2s ease,box-shadow .2s ease}.avatar img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 28%;border-radius:28px;position:relative;z-index:1}.avatar.speaking{animation:breezePulse .48s ease-in-out infinite alternate;box-shadow:0 20px 80px #000a,0 0 35px #9ee7ff88,0 0 85px #756cff66}.avatar.speaking::after{content:"";position:absolute;inset:-10px;border:4px solid #9ee7ffcc;border-radius:38px;animation:breezeRing .9s ease-out infinite;pointer-events:none;z-index:0}.avatar.speaking::before{content:"▂ ▅ █ ▅ ▂";position:absolute;left:50%;bottom:-14px;width:150px;height:30px;transform:translateX(-50%);border-radius:999px;background:#10172b;border:2px solid #9ee7ff99;color:#9ee7ff;font-size:18px;line-height:25px;text-align:center;letter-spacing:3px;opacity:1;animation:breezeBars .32s ease-in-out infinite alternate;z-index:3;box-shadow:0 0 20px #9ee7ff66}@keyframes breezePulse{from{transform:scale(1)}to{transform:scale(1.045)}}@keyframes breezeRing{from{opacity:1;transform:scale(.98)}to{opacity:0;transform:scale(1.08)}}@keyframes breezeBars{from{transform:translateX(-50%) scaleY(.65)}to{transform:translateX(-50%) scaleY(1.12)}}h1{margin:0;font-size:42px;letter-spacing:-1px}
 .subtitle{margin:7px 0 0;opacity:.72}
 .panel{background:#10172bdf;border:1px solid #ffffff18;border-radius:22px;padding:20px;box-shadow:0 20px 70px #0008;backdrop-filter:blur(12px)}
 .panel-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -28,6 +28,7 @@ header{text-align:center;padding:18px 0 22px}
 .input button{padding:15px 20px;border:0;border-radius:12px;background:#756cff;color:#fff;font-weight:800;font-size:15px}
 .input button:disabled{opacity:.5}
 .room-note{margin-top:10px;font-size:11px;opacity:.5}.status{margin-top:12px;font-size:12px;opacity:.62;text-align:center}
+.live-avatar-video{display:none;width:100%;height:100%;object-fit:cover;border-radius:28px;position:absolute;inset:0;z-index:2;background:#080d1c}.avatar.live-mode img{display:none}.avatar.live-mode .live-avatar-video{display:block}.avatar.live-mode{box-shadow:0 20px 80px #000a,0 0 55px #9ee7ff88}
 footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 </style>
 </head>
@@ -35,7 +36,7 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 <main>
 <header>
 <div class="badge"><span class="dot"></span> LIVE PROTOTYPE</div>
-<div class="avatar" aria-label="Breeze AI avatar"><img src="data:image/jpeg;base64,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" alt="Breeze, AI Agent Hub live host"></div><div id="speakingLabel" class="status" style="margin-top:-4px;min-height:18px"></div>
+<div class="avatar" aria-label="Breeze AI avatar"><img id="fallbackAvatar" src="data:image/jpeg;base64,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" alt="Breeze, AI Agent Hub live host"></div><video id="liveAvatarVideo" autoplay playsinline class="live-avatar-video" aria-label="Breeze live avatar"></video><button id="startLiveAvatar" type="button" style="display:block;margin:0 auto 12px;padding:12px 18px;border:0;border-radius:12px;background:#756cff;color:#fff;font-weight:800">Start Realistic Breeze</button><div id="speakingLabel" class="status" style="margin-top:-4px;min-height:18px"></div>
 <h1>Breeze</h1>
 <p class="subtitle">AI Agent Hub live host</p>
 </header>
@@ -62,7 +63,8 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 <footer>AI Agent Hub • Breeze Live</footer>
 </main>
 
-<script>
+<script type="module">
+import { LiveAvatarSession } from "https://esm.sh/@heygen/liveavatar-web-sdk@0.0.19";
 const input=document.getElementById("text");
 const messages=document.getElementById("messages");
 const status=document.getElementById("status");
@@ -75,6 +77,9 @@ const roomId="main";
 const API_BASE="https://ai-agent-hub-6.onrender.com";
 const avatar=document.querySelector(".avatar");
 const speakingLabel=document.getElementById("speakingLabel");
+const liveAvatarVideo=document.getElementById("liveAvatarVideo");
+const startLiveAvatarButton=document.getElementById("startLiveAvatar");
+let liveAvatarSession=null;
 let lastRoomMessage=0;
 const sessionId=localStorage.getItem("breezeSessionId")||crypto.randomUUID();
 localStorage.setItem("breezeSessionId",sessionId);
@@ -159,7 +164,12 @@ async function send(){
     const data=await r.json();
     if(!r.ok)throw new Error(data.error||"Request failed");
     await syncRoom();
-    speak(data.reply);
+    if(liveAvatarSession){
+      liveAvatarSession.message(data.reply);
+      setSpeaking(true);
+    }else{
+      speak(data.reply);
+    }
     status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected";
   }catch(error){
     addMessage("Breeze","I'm having trouble reaching my backend right now.","breeze");
@@ -179,6 +189,39 @@ function pickBreezeVoice(){
 function setSpeaking(active){
   avatar.classList.toggle("speaking",active);
   speakingLabel.textContent=active?"🔊 Breeze is speaking…":"";
+}
+
+async function startLiveAvatar(){
+  if(liveAvatarSession) return;
+  startLiveAvatarButton.disabled=true;
+  startLiveAvatarButton.textContent="Starting realistic Breeze…";
+  try{
+    const r=await fetch(API_BASE+"/api/liveavatar/token",{method:"POST"});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||"LiveAvatar session could not be created.");
+    liveAvatarSession=new LiveAvatarSession(data.session_token,{autoKeepAlive:true,voiceChat:{defaultMuted:true}});
+    liveAvatarSession.on("avatar.speak_started",()=>setSpeaking(true));
+    liveAvatarSession.on("avatar.speak_ended",()=>setSpeaking(false));
+    await liveAvatarSession.start();
+    avatar.classList.add("live-mode");
+    startLiveAvatarButton.textContent="Breeze LiveAvatar Connected";
+    speakingLabel.textContent="🎥 Real-time Breeze is connected";
+    let attempts=0;
+    const attachTimer=setInterval(()=>{
+      attempts++;
+      try{
+        liveAvatarSession.attach(liveAvatarVideo);
+        if(liveAvatarVideo.srcObject){clearInterval(attachTimer);liveAvatarVideo.play().catch(()=>{});}
+      }catch{}
+      if(attempts>30)clearInterval(attachTimer);
+    },500);
+    status.textContent="Breeze realistic avatar: connected";
+  }catch(error){
+    liveAvatarSession=null;
+    startLiveAvatarButton.disabled=false;
+    startLiveAvatarButton.textContent="Start Realistic Breeze";
+    status.textContent="LiveAvatar: "+error.message;
+  }
 }
 
 function speak(text){
@@ -231,6 +274,7 @@ async function simulateAudience(){
   status.textContent="Audience simulation complete";
 }
 
+startLiveAvatarButton.addEventListener("click",startLiveAvatar);
 sendButton.addEventListener("click",send);
 simulateButton.addEventListener("click",simulateAudience);
 input.addEventListener("keydown",e=>{if(e.key==="Enter")send();});
