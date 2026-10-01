@@ -48,6 +48,7 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 </div>
 <div class="input" style="margin-top:0">
 <input id="viewer" placeholder="Your viewer name" maxlength="40" autocomplete="off">
+<button id="simulate" type="button">Simulate Audience</button>
 </div>
 <div class="room-note">Shared room: <span id="roomLabel">main</span> • Open this page in another browser to simulate another viewer.</div>
 <div id="messages" class="messages">
@@ -69,6 +70,7 @@ const status=document.getElementById("status");
 const connection=document.getElementById("connection");
 const sendButton=document.getElementById("send");
 const viewerInput=document.getElementById("viewer");
+const simulateButton=document.getElementById("simulate");
 const roomLabel=document.getElementById("roomLabel");
 const roomId="main";
 let lastRoomMessage=0;
@@ -166,7 +168,35 @@ function speak(text){
   window.speechSynthesis.speak(utterance);
 }
 
+async function simulateAudience(){
+  simulateButton.disabled=true;
+  const viewers=[
+    ["Alex","Hey Breeze!"],
+    ["John","What's happening in the live?"],
+    ["Sam","Tell us a joke!"]
+  ];
+  for(const [name,message] of viewers){
+    try{
+      await fetch("/api/chat",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          message,
+          sessionId:"sim-"+name.toLowerCase(),
+          viewerName:name,
+          roomId
+        })
+      });
+      await new Promise(resolve=>setTimeout(resolve,700));
+    }catch{}
+  }
+  await syncRoom();
+  simulateButton.disabled=false;
+  status.textContent="Audience simulation complete";
+}
+
 sendButton.addEventListener("click",send);
+simulateButton.addEventListener("click",simulateAudience);
 input.addEventListener("keydown",e=>{if(e.key==="Enter")send();});
 checkBackend();
 </script>
