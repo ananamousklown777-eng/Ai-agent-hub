@@ -2,6 +2,7 @@ import http from "node:http";
 import { URL } from "node:url";
 import OpenAI from "openai";
 import { readFile } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
 
 const port = Number(process.env.PORT || 3000);
 const freeMode = process.env.BREEZE_FREE_MODE !== "false";
@@ -16,6 +17,9 @@ const MAX_ROOM_MESSAGES = 100;
 const LIVEAVATAR_API_URL = "https://api.liveavatar.com";
 const LIVEAVATAR_SANDBOX_AVATAR_ID = "65f9e3c9-d48b-4118-b73a-4ae2e3cbb8f0";
 let liveAvatarContextId = process.env.LIVEAVATAR_CONTEXT_ID || "";
+const TIKTOK_REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI || "https://ai-agent-hub-6.onrender.com/auth/tiktok/callback";
+const tiktokStates = new Map();
+const tiktokTokens = new Map();
 
 const systemPrompt = [
   "You are Breeze, the live AI host for AI Agent Hub.",
@@ -107,6 +111,80 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) { try { const html = await readFile(new URL("./index.html", import.meta.url), "utf8"); res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }); res.end(html); } catch (error) { console.error("Breeze page error:", error?.message || error); sendJson(res, 500, { error: "Breeze Live page could not be loaded." }); } return; }
   if (req.method === "POST" && url.pathname === "/api/liveavatar/token") { try { if (!process.env.LIVEAVATAR_API_KEY) { sendJson(res, 503, { error: "LIVEAVATAR_API_KEY is not configured on Render." }); return; } const contextId = await ensureLiveAvatarContext(); const response = await fetch(LIVEAVATAR_API_URL + "/v1/sessions/token", { method: "POST", headers: { "X-API-KEY": process.env.LIVEAVATAR_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ mode: "FULL", is_sandbox: true, avatar_id: LIVEAVATAR_SANDBOX_AVATAR_ID, avatar_persona: { context_id: contextId, language: "en" } }) }); const data = await response.json().catch(() => ({})); if (!response.ok || !data?.data?.session_token) { console.error("LiveAvatar token error:", data); sendJson(res, response.status || 500, { error: data?.message || data?.error?.message || "LiveAvatar session could not be created." }); return; } sendJson(res, 200, { session_token: data.data.session_token, session_id: data.data.session_id, sandbox: true }); } catch (error) { console.error("LiveAvatar setup error:", error?.message || error); sendJson(res, 500, { error: error?.message || "LiveAvatar could not start." }); } return; }
   if (req.method === "GET" && url.pathname === "/api/room") { const roomId = (url.searchParams.get("roomId") || "main").trim().slice(0, 100); sendJson(res, 200, { roomId, messages: getRoom(roomId) }); return; }
+  if (req.method === "GET" && url.pathname === "/auth/tiktok") {
+    if (!process.env.TIKTOK_CLIENT_KEY || !process.env.TIKTOK_CLIENT_SECRET) {
+      sendJson(res, 503, { error: "TikTok Login Kit is not configured on Render yet." });
+      return;
+    }
+    const state = randomBytes(30).toString("hex");
+    tiktokStates.set(state, Date.now());
+    for (const [savedState, createdAt] of tiktokStates) {
+      if (Date.now() - createdAt > 10 * 60 * 1000) tiktokStates.delete(savedState);
+    }
+    const params = new URLSearchParams({
+      client_key: process.env.TIKTOK_CLIENT_KEY,
+      response_type: "code",
+      scope: "user.info.basic,video.upload",
+      redirect_uri: TIKTOK_REDIRECT_URI,
+      state
+    });
+    res.writeHead(302, { Location: "https://www.tiktok.com/v2/auth/authorize/?" + params.toString() });
+    res.end();
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/auth/tiktok/callback") {
+    try {
+      const errorCode = url.searchParams.get("error");
+      const errorDescription = url.searchParams.get("error_description");
+      if (errorCode) {
+        sendJson(res, 400, { error: "TikTok authorization was not completed.", detail: errorDescription || errorCode });
+        return;
+      }
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
+      if (!code || !state || !tiktokStates.has(state)) {
+        sendJson(res, 400, { error: "Invalid or expired TikTok authorization response." });
+        return;
+      }
+      tiktokStates.delete(state);
+      if (!process.env.TIKTOK_CLIENT_KEY || !process.env.TIKTOK_CLIENT_SECRET) {
+        sendJson(res, 503, { error: "TikTok Login Kit credentials are not configured on Render." });
+        return;
+      }
+      const tokenBody = new URLSearchParams({
+        client_key: process.env.TIKTOK_CLIENT_KEY,
+        client_secret: process.env.TIKTOK_CLIENT_SECRET,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: TIKTOK_REDIRECT_URI
+      });
+      const tokenResponse = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: tokenBody.toString()
+      });
+      const tokenData = await tokenResponse.json().catch(() => ({}));
+      if (!tokenResponse.ok || !tokenData?.access_token) {
+        console.error("TikTok token exchange error:", tokenData);
+        sendJson(res, tokenResponse.status || 500, { error: tokenData?.error_description || "TikTok token exchange failed." });
+        return;
+      }
+      const tokenId = tokenData.open_id || randomBytes(12).toString("hex");
+      tiktokTokens.set(tokenId, {
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_in: tokenData.expires_in,
+        refresh_expires_in: tokenData.refresh_expires_in,
+        scope: tokenData.scope
+      });
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end("<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Breeze - TikTok Connected</title></head><body style=\"font-family:system-ui;padding:32px;max-width:680px;margin:auto\"><h1>TikTok connected</h1><p>Breeze successfully completed the TikTok Login Kit authorization.</p><p>The authorization tokens were received securely by the Breeze backend.</p></body></html>");
+    } catch (error) {
+      console.error("TikTok OAuth callback error:", error?.message || error);
+      sendJson(res, 500, { error: "TikTok connection could not be completed." });
+    }
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/api/health") { sendJson(res, 200, { ok: true, service: "breeze-live", freeMode }); return; }
   if (req.method === "POST" && url.pathname === "/api/chat") { try { const raw = await readBody(req); const body = JSON.parse(raw || "{}"); const message = typeof body.message === "string" ? body.message.trim() : ""; const viewerName = typeof body.viewerName === "string" && body.viewerName.trim() ? body.viewerName.trim().slice(0, 40) : "Viewer"; const roomId = typeof body.roomId === "string" && body.roomId.trim() ? body.roomId.trim().slice(0, 100) : "main"; const sessionId = typeof body.sessionId === "string" && body.sessionId.trim() ? body.sessionId.trim().slice(0, 100) : "default"; if (!message) { sendJson(res, 400, { error: "A message is required." }); return; } const history = getSession(sessionId); remember(sessionId, "user", message); addRoomMessage(roomId, viewerName, message, "viewer"); if (freeMode) { const reply = freeModeReply(message, history, viewerName, getRoom(roomId)); remember(sessionId, "assistant", reply); addRoomMessage(roomId, "Breeze", reply, "breeze"); sendJson(res, 200, { reply, mode: "free-test", memory: { session: true, messages: history.length } }); return; } if (!groqClient) { sendJson(res, 503, { error: "AI backend is not configured yet. Add GROQ_API_KEY to the server environment." }); return; } const roomContext = getRoom(roomId).slice(-12).map(item => `${item.kind === "viewer" ? item.who : "Breeze"}: ${item.text}`).join("\n"); const response = await groqClient.chat.completions.create({ model, messages: [{ role: "system", content: systemPrompt + `\n\nCurrent live-room context:\n${roomContext || "The room is empty."}\n\nThe current speaker is ${viewerName}. Treat names as distinct viewers. Only refer to another viewer when that viewer appears by name in the room context.` }, ...history.map(item => ({ role: item.role, content: item.content }))], max_completion_tokens: 300, reasoning_effort: "low" }); const reply = response.choices?.[0]?.message?.content?.trim() || "I’m having a little trouble forming my reply. Give me that one more time."; remember(sessionId, "assistant", reply); addRoomMessage(roomId, "Breeze", reply, "breeze"); sendJson(res, 200, { reply, memory: { session: true, messages: history.length } }); } catch (error) { console.error("Breeze chat error:", error?.message || error); sendJson(res, 500, { error: "Breeze could not respond right now." }); } return; }
   sendJson(res, 404, { error: "Not found" });
