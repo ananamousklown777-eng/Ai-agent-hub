@@ -1,6 +1,7 @@
 import http from "node:http";
 import { URL } from "node:url";
 import OpenAI from "openai";
+import { readFile } from "node:fs/promises";
 
 const port = Number(process.env.PORT || 3000);
 const freeMode = process.env.BREEZE_FREE_MODE !== "false";
@@ -67,8 +68,14 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
 
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Breeze Live</title></head><body style="font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;padding:20px"><h1>Breeze Live</h1><p>Your backend is live.</p><p><strong>Free test mode is active.</strong></p><input id="m" placeholder="Type a message" style="width:70%;padding:10px"><button onclick="send()" style="padding:10px">Send</button><pre id="out"></pre><script>async function send(){const m=document.getElementById("m").value;const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:m})});document.getElementById("out").textContent=JSON.stringify(await r.json(),null,2)}</script></body></html>`);
+    try {
+      const html = await readFile(new URL("./index.html", import.meta.url), "utf8");
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(html);
+    } catch (error) {
+      console.error("Breeze page error:", error?.message || error);
+      sendJson(res, 500, { error: "Breeze Live page could not be loaded." });
+    }
     return;
   }
 
