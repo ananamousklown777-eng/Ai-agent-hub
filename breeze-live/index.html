@@ -5,59 +5,94 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Breeze Live | AI Agent Hub</title>
 <style>
-body{margin:0;font-family:system-ui,sans-serif;background:#0b1020;color:#fff;min-height:100vh;display:grid;place-items:center}
-main{width:min(900px,92vw);text-align:center}.avatar{width:220px;height:220px;border-radius:50%;margin:20px auto;background:radial-gradient(circle at 35% 30%,#fff,#9ee7ff 20%,#6c63ff 55%,#151a45);box-shadow:0 0 60px #6c63ff88;display:grid;place-items:center;font-size:70px}
-.live{display:inline-block;padding:7px 14px;border-radius:20px;background:#e53935;font-weight:700}.panel{margin-top:24px;background:#151b31;border-radius:18px;padding:20px;text-align:left}.msg{padding:10px 0;border-bottom:1px solid #ffffff18}.input{display:flex;gap:10px;margin-top:16px}.input input{flex:1;padding:14px;border-radius:10px;border:0}.input button{padding:14px 18px;border:0;border-radius:10px;font-weight:700}.status{margin-top:12px;font-size:13px;opacity:.7}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#202a62 0,#0b1020 48%,#060914 100%);color:#fff;min-height:100vh}
+main{width:min(760px,94vw);margin:0 auto;padding:28px 0 40px}
+header{text-align:center;padding:18px 0 22px}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:#e53935;font-size:12px;font-weight:800;letter-spacing:.5px}
+.dot{width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff}
+.avatar{width:150px;height:150px;border-radius:50%;margin:24px auto 16px;background:radial-gradient(circle at 35% 28%,#fff 0,#baf1ff 18%,#766cff 55%,#171c4c 100%);box-shadow:0 0 70px #6c63ff99,0 0 20px #9ee7ff66;display:grid;place-items:center;font-size:58px}
+h1{margin:0;font-size:42px;letter-spacing:-1px}
+.subtitle{margin:7px 0 0;opacity:.72}
+.panel{background:#10172bdf;border:1px solid #ffffff18;border-radius:22px;padding:20px;box-shadow:0 20px 70px #0008;backdrop-filter:blur(12px)}
+.panel-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.connected{font-size:12px;opacity:.65}
+.messages{min-height:130px;max-height:430px;overflow:auto;padding-right:4px}
+.msg{padding:13px 0;border-bottom:1px solid #ffffff12;line-height:1.45}
+.msg:last-child{border-bottom:0}
+.msg b{margin-right:5px}
+.viewer b{color:#9ee7ff}
+.breeze b{color:#b7a9ff}
+.input{display:flex;gap:10px;margin-top:14px}
+.input input{flex:1;min-width:0;padding:15px 16px;border-radius:12px;border:1px solid #ffffff18;background:#080d1c;color:#fff;outline:none;font-size:16px}
+.input input:focus{border-color:#8d84ff}
+.input button{padding:15px 20px;border:0;border-radius:12px;background:#756cff;color:#fff;font-weight:800;font-size:15px}
+.input button:disabled{opacity:.5}
+.status{margin-top:12px;font-size:12px;opacity:.62;text-align:center}
+footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 </style>
 </head>
 <body>
 <main>
-<div class="live">● LIVE PROTOTYPE</div>
+<header>
+<div class="badge"><span class="dot"></span> LIVE PROTOTYPE</div>
 <div class="avatar" aria-label="Breeze AI avatar">✦</div>
 <h1>Breeze</h1>
-<p>AI Agent Hub live host prototype</p>
+<p class="subtitle">AI Agent Hub live host</p>
+</header>
+
 <section class="panel">
-<strong>Audience</strong>
-<div class="msg"><b>Breeze:</b> Welcome. I'm Breeze, an AI host from AI Agent Hub.</div>
-<div id="messages"></div>
+<div class="panel-title">
+<strong>Audience Chat</strong>
+<span id="connection" class="connected">Connecting…</span>
+</div>
+<div id="messages" class="messages">
+<div class="msg breeze"><b>Breeze:</b> Welcome. I'm Breeze, the AI host for AI Agent Hub.</div>
+</div>
 <div class="input">
-<input id="text" placeholder="Type an audience message…" autocomplete="off">
+<input id="text" placeholder="Type a message…" autocomplete="off">
 <button id="send">Send</button>
 </div>
-<div id="status" class="status">AI backend: checking…</div>
+<div id="status" class="status">Checking the Breeze backend…</div>
 </section>
+<footer>AI Agent Hub • Breeze Live</footer>
 </main>
+
 <script>
 const input=document.getElementById("text");
 const messages=document.getElementById("messages");
 const status=document.getElementById("status");
+const connection=document.getElementById("connection");
 const sendButton=document.getElementById("send");
 
-function addMessage(who,text){
+function addMessage(who,text,kind){
   const div=document.createElement("div");
-  div.className="msg";
+  div.className="msg "+kind;
   const strong=document.createElement("b");
   strong.textContent=who+":";
   div.appendChild(strong);
   div.appendChild(document.createTextNode(" "+text));
   messages.appendChild(div);
-  messages.scrollIntoView({behavior:"smooth",block:"end"});
+  messages.scrollTop=messages.scrollHeight;
 }
 
 async function checkBackend(){
   try{
     const r=await fetch("/api/health");
-    if(!r.ok) throw new Error();
-    status.textContent="AI backend: connected";
+    const data=await r.json();
+    if(!r.ok)throw new Error();
+    connection.textContent=data.freeMode?"Free test mode":"AI connected";
+    status.textContent="Breeze backend: connected";
   }catch{
-    status.textContent="AI backend: not connected yet. The backend must be deployed separately from GitHub Pages.";
+    connection.textContent="Offline";
+    status.textContent="Breeze backend: not connected";
   }
 }
 
 async function send(){
   const value=input.value.trim();
   if(!value)return;
-  addMessage("Viewer",value);
+  addMessage("You",value,"viewer");
   input.value="";
   sendButton.disabled=true;
   status.textContent="Breeze is thinking…";
@@ -68,12 +103,12 @@ async function send(){
       body:JSON.stringify({message:value})
     });
     const data=await r.json();
-    if(!r.ok) throw new Error(data.error||"Request failed");
-    addMessage("Breeze",data.reply);
+    if(!r.ok)throw new Error(data.error||"Request failed");
+    addMessage("Breeze",data.reply,"breeze");
     speak(data.reply);
-    status.textContent="AI backend: connected";
+    status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected";
   }catch(error){
-    addMessage("Breeze","I'm not connected to my AI backend yet. The secure server needs to be deployed first.");
+    addMessage("Breeze","I'm having trouble reaching my backend right now.","breeze");
     status.textContent=error.message;
   }finally{
     sendButton.disabled=false;
