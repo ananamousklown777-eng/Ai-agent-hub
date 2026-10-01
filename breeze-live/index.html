@@ -46,6 +46,10 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 <strong>Audience Chat</strong>
 <span id="connection" class="connected">Connecting…</span>
 </div>
+<div class="input" style="margin-top:0">
+<input id="viewer" placeholder="Your viewer name" maxlength="40" autocomplete="off">
+</div>
+<div class="room-note">Shared room: <span id="roomLabel">main</span> • Open this page in another browser to simulate another viewer.</div>
 <div id="messages" class="messages">
 <div class="msg breeze"><b>Breeze:</b> Welcome. I'm Breeze, the AI host for AI Agent Hub.</div>
 </div>
@@ -64,10 +68,44 @@ const messages=document.getElementById("messages");
 const status=document.getElementById("status");
 const connection=document.getElementById("connection");
 const sendButton=document.getElementById("send");
+const viewerInput=document.getElementById("viewer");
+const roomLabel=document.getElementById("roomLabel");
+const roomId="main";
+let lastRoomMessage=0;
 const sessionId=localStorage.getItem("breezeSessionId")||crypto.randomUUID();
 localStorage.setItem("breezeSessionId",sessionId);
+const savedViewer=localStorage.getItem("breezeViewerName")||"Viewer";
+viewerInput.value=savedViewer;
+roomLabel.textContent=roomId;
 
-function addMessage(who,text,kind){
+function addMessage(who,text,kind,id){
+  if(id && document.querySelector('[data-message-id="'+id+'"]'))return;
+  const div=document.createElement("div");
+  div.className="msg "+kind;
+  if(id)div.dataset.messageId=id;
+  const strong=document.createElement("b");
+  strong.textContent=who+":";
+  div.appendChild(strong);
+  div.appendChild(document.createTextNode(" "+text));
+  messages.appendChild(div);
+  messages.scrollTop=messages.scrollHeight;
+}
+
+async function syncRoom(){
+  try{
+    const r=await fetch("/api/room?roomId="+encodeURIComponent(roomId));
+    const data=await r.json();
+    if(!r.ok)throw new Error();
+    for(const item of data.messages){
+      if(item.id>lastRoomMessage){
+        addMessage(item.who,item.text,item.kind,item.id);
+        lastRoomMessage=item.id;
+      }
+    }
+  }catch{}
+}
+
+function addMessageOld(who,text,kind){
   const div=document.createElement("div");
   div.className="msg "+kind;
   const strong=document.createElement("b");
@@ -94,7 +132,9 @@ async function checkBackend(){
 async function send(){
   const value=input.value.trim();
   if(!value)return;
-  addMessage("You",value,"viewer");
+  const viewerName=(viewerInput.value.trim()||"Viewer").slice(0,40);
+  localStorage.setItem("breezeViewerName",viewerName);
+  addMessage(viewerName,value,"viewer");
   input.value="";
   sendButton.disabled=true;
   status.textContent="Breeze is thinking…";
@@ -102,7 +142,7 @@ async function send(){
     const r=await fetch("/api/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:value,sessionId})
+      body:JSON.stringify({message:value,sessionId,viewerName,roomId})
     });
     const data=await r.json();
     if(!r.ok)throw new Error(data.error||"Request failed");
