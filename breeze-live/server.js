@@ -48,6 +48,12 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
 
+  if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Breeze Live</title></head><body style="font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;padding:20px"><h1>Breeze Live</h1><p>Your backend is live.</p><input id="m" placeholder="Type a message" style="width:70%;padding:10px"><button onclick="send()" style="padding:10px">Send</button><pre id="out"></pre><script>async function send(){const m=document.getElementById("m").value;const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:m})});document.getElementById("out").textContent=JSON.stringify(await r.json(),null,2)}</script></body></html>`);
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/health") {
     sendJson(res, 200, { ok: true, service: "breeze-live" });
     return;
