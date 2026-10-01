@@ -204,7 +204,30 @@ async function startLiveAvatar(){
     liveAvatarSession.on("avatar.speak_ended",()=>setSpeaking(false));
 
     // Register this BEFORE start(). The SDK can emit stream_ready during startup.
+    let streamReadySeen=false;
+    let videoCheckTimer=null;
+
+    const verifyVideo = () => {
+      const w=liveAvatarVideo.videoWidth||0;
+      const h=liveAvatarVideo.videoHeight||0;
+      const hasStream=!!liveAvatarVideo.srcObject;
+      if(w>0 && h>0){
+        avatar.classList.add("live-mode");
+        startLiveAvatarButton.textContent="Breeze LiveAvatar Connected";
+        speakingLabel.textContent="🎥 Real-time Breeze video is connected";
+        status.textContent="Breeze realistic avatar: video stream is LIVE ("+w+"×"+h+")";
+        liveAvatarVideo.play().catch(()=>{});
+        if(videoCheckTimer){clearInterval(videoCheckTimer);videoCheckTimer=null;}
+        return true;
+      }
+      status.textContent=streamReadySeen
+        ? "LiveAvatar stream ready, waiting for video frames…"
+        : "LiveAvatar connected, waiting for video stream…";
+      return hasStream;
+    };
+
     const attachStream = () => {
+      streamReadySeen=true;
       try{
         avatar.classList.add("live-mode");
         liveAvatarSession.attach(liveAvatarVideo);
@@ -212,18 +235,30 @@ async function startLiveAvatar(){
         liveAvatarVideo.playsInline=true;
         liveAvatarVideo.muted=false;
         liveAvatarVideo.play().catch(()=>{});
-        startLiveAvatarButton.textContent="Breeze LiveAvatar Connected";
-        speakingLabel.textContent="🎥 Real-time Breeze video is connected";
-        status.textContent="Breeze realistic avatar: video stream connected";
+        status.textContent="LiveAvatar stream received. Attaching video…";
+        verifyVideo();
+        if(!videoCheckTimer){
+          videoCheckTimer=setInterval(verifyVideo,500);
+          setTimeout(()=>{
+            if(videoCheckTimer){clearInterval(videoCheckTimer);videoCheckTimer=null;}
+            verifyVideo();
+          },10000);
+        }
       }catch(error){
         status.textContent="LiveAvatar video attach: "+(error?.message||"waiting for stream");
       }
     };
 
-    liveAvatarSession.on("session.stream_ready", attachStream);
+    liveAvatarVideo.addEventListener("loadedmetadata",verifyVideo);
+    liveAvatarVideo.addEventListener("canplay",verifyVideo);
+    liveAvatarVideo.addEventListener("playing",verifyVideo);
+    liveAvatarVideo.addEventListener("error",()=>status.textContent="LiveAvatar video element error. Try Chrome on Android.");
+
+    // The official SDK emits stream_ready only after both remote audio and video tracks are available.
+    liveAvatarSession.on("session.stream_ready",attachStream);
     await liveAvatarSession.start();
 
-    // In case the stream was already ready before the listener ran.
+    // In case the stream was already ready before the listener ran, retry attachment briefly.
     attachStream();
   }catch(error){
     liveAvatarSession=null;
