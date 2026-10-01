@@ -206,16 +206,21 @@ async function startLiveAvatar(){
     avatar.classList.add("live-mode");
     startLiveAvatarButton.textContent="Breeze LiveAvatar Connected";
     speakingLabel.textContent="🎥 Real-time Breeze is connected";
-    let attempts=0;
-    const attachTimer=setInterval(()=>{
-      attempts++;
+
+    // LiveAvatar publishes its real video/audio tracks asynchronously.
+    // The official SDK exposes "session.stream_ready" when both tracks are ready.
+    const attachStream = () => {
       try{
         liveAvatarSession.attach(liveAvatarVideo);
-        if(liveAvatarVideo.srcObject){clearInterval(attachTimer);liveAvatarVideo.play().catch(()=>{});}
-      }catch{}
-      if(attempts>30)clearInterval(attachTimer);
-    },500);
-    status.textContent="Breeze realistic avatar: connected";
+        liveAvatarVideo.play().catch(()=>{});
+        status.textContent="Breeze realistic avatar: video stream connected";
+      }catch(error){
+        status.textContent="LiveAvatar video attach: "+(error?.message||"waiting for stream");
+      }
+    };
+
+    liveAvatarSession.on("session.stream_ready", attachStream);
+    attachStream();
   }catch(error){
     liveAvatarSession=null;
     startLiveAvatarButton.disabled=false;
