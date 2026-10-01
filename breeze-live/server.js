@@ -77,7 +77,7 @@ function freeModeReply(message, history) {
   if (lower.includes("what is my favorite color") || lower.includes("what's my favorite color")) {
     const favorite = findRecentUser(/favorite color is/i);
     return favorite
-      ? favorite.replace(/^.*favorite color is\\s*/i, "You told me your favorite color is ")
+      ? favorite.replace(/^.*favorite color is\s*/i, "You told me your favorite color is ")
       : "You haven't told me your favorite color yet.";
   }
 
@@ -86,9 +86,9 @@ function freeModeReply(message, history) {
   }
 
   if (lower.includes("what's my name") || lower.includes("what is my name") || lower === "who am i") {
-    const name = findRecentUser(/(?:my name is|i'm|i am)\\s+(.+)/i);
+    const name = findRecentUser(/(?:my name is|i'm|i am)\s+(.+)/i);
     return name
-      ? `You told me your name is ${name.match(/(?:my name is|i'm|i am)\\s+(.+)/i)[1]}.`
+      ? `You told me your name is ${name.match(/(?:my name is|i'm|i am)\s+(.+)/i)[1]}.`
       : "You haven't told me your name yet.";
   }
 
