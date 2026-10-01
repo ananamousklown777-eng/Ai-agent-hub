@@ -79,8 +79,11 @@ function freeModeReply(message, history, viewerName = "Viewer", roomMessages = [
   if (lower.includes("tiktok")) return "TikTok is part of the bigger Breeze Live plan. Right now we're testing the host, conversation, memory, and audience flow before connecting the live platform.";
   if (lower.includes("ai agent hub")) return "AI Agent Hub is the project we're building around Breeze and other AI-agent workflows. Breeze is the live-host side of it.";
   if (lower.includes("free mode") || lower.includes("free test")) return "Free test mode means Breeze is using its local conversation brain instead of making paid AI API calls. That lets us keep building without spending credits.";
-  if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
-    if (displayName && audienceText) return `Hey, ${displayName}! Welcome to AI Agent Hub. I see ${audienceText} are here too. What's on your mind?`;
+  if (lower === "hello" || lower === "hi" || lower === "hey" || lower.startsWith("hello ") || lower.startsWith("hi ") || lower.startsWith("hey ")) {
+    if (displayName && audienceText) {
+      const names = otherViewers.length === 1 ? audienceText : audienceText.replace(/, ([^,]+)$/, " and $1");
+      return `Hey, ${displayName}! Welcome to AI Agent Hub. ${names} is here too, so we've got a little crowd forming. What's on your mind?`;
+    }
     return displayName ? `Hey, ${displayName}! I'm Breeze. Welcome to AI Agent Hub. What's on your mind?` : "Hey! I'm Breeze. Welcome to AI Agent Hub. I'm online and ready for the next message.";
   }
   const previous = [...recentUsers].reverse().find(item => item !== message);
