@@ -11,8 +11,8 @@ main{width:min(760px,94vw);margin:0 auto;padding:28px 0 40px}
 header{text-align:center;padding:18px 0 22px}
 .badge{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:#e53935;font-size:12px;font-weight:800;letter-spacing:.5px}
 .dot{width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff}
-.avatar{width:150px;position:relative;height:150px;border-radius:50%;margin:24px auto 16px;background:radial-gradient(circle at 35% 28%,#fff 0,#baf1ff 18%,#766cff 55%,#171c4c 100%);box-shadow:0 0 70px #6c63ff99,0 0 20px #9ee7ff66;display:grid;transition:transform .2s ease,box-shadow .2s ease;place-items:center;font-size:58px}
-.avatar.speaking{animation:breezePulse .8s ease-in-out infinite alternate;box-shadow:0 0 95px #6c63ffff,0 0 35px #9ee7ffff}.avatar.speaking::after{content:"";position:absolute;inset:-12px;border:2px solid #9ee7ff88;border-radius:50%;animation:breezeRing 1.2s ease-out infinite}@keyframes breezePulse{from{transform:scale(1)}to{transform:scale(1.07)}}@keyframes breezeRing{from{transform:scale(.9);opacity:.9}to{transform:scale(1.2);opacity:0}}h1{margin:0;font-size:42px;letter-spacing:-1px}
+.avatar{width:min(330px,78vw);height:330px;border-radius:28px;overflow:hidden;position:relative;margin:24px auto 16px;background:#080d1c;box-shadow:0 18px 60px #0009,0 0 35px #6c63ff55;transition:transform .2s ease,box-shadow .2s ease}.avatar img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 28%}
+.avatar.speaking{animation:breezePulse .8s ease-in-out infinite alternate;box-shadow:0 20px 70px #000a,0 0 45px #9ee7ff88}.avatar.speaking::after{content:"";position:absolute;inset:0;border:3px solid #9ee7ff88;border-radius:28px;animation:breezeRing 1.2s ease-out infinite}@keyframes breezePulse{from{transform:scale(1)}to{transform:scale(1.025)}}@keyframes breezeRing{from{opacity:.8;transform:scale(1)}to{opacity:0;transform:scale(1.04)}}h1{margin:0;font-size:42px;letter-spacing:-1px}
 .subtitle{margin:7px 0 0;opacity:.72}
 .panel{background:#10172bdf;border:1px solid #ffffff18;border-radius:22px;padding:20px;box-shadow:0 20px 70px #0008;backdrop-filter:blur(12px)}
 .panel-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -36,7 +36,7 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 <main>
 <header>
 <div class="badge"><span class="dot"></span> LIVE PROTOTYPE</div>
-<div class="avatar" aria-label="Breeze AI avatar">✦</div>
+<div class="avatar" aria-label="Breeze AI avatar"><img src="/breeze-avatar.jpg" alt="Breeze, AI Agent Hub live host"></div>
 <h1>Breeze</h1>
 <p class="subtitle">AI Agent Hub live host</p>
 </header>
