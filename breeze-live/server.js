@@ -3,7 +3,10 @@ import { URL } from "node:url";
 import OpenAI from "openai";
 
 const port = Number(process.env.PORT || 3000);
-const client = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+const freeMode = process.env.BREEZE_FREE_MODE !== "false";
+const client = !freeMode && process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 const model = process.env.OPENAI_MODEL || "gpt-5.6-luna";
 
 const systemPrompt = [
@@ -40,6 +43,21 @@ function readBody(req) {
   });
 }
 
+function freeModeReply(message) {
+  const lower = message.toLowerCase();
+
+  if (/^(hi|hello|hey)\b/.test(lower)) {
+    return "Hey! I'm Breeze. I'm running in free test mode right now, but the Breeze Live system is working.";
+  }
+  if (lower.includes("who are you") || lower.includes("what are you")) {
+    return "I'm Breeze, the AI host for AI Agent Hub. Right now I'm running in free test mode while we build the system.";
+  }
+  if (lower.includes("how are you")) {
+    return "I'm running and ready to help. Free test mode is active, so we're saving the paid API calls for later.";
+  }
+  return "Breeze received your message. I'm currently in free test mode, so I'm using a local test response instead of a paid AI API call.";
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     sendJson(res, 204, {});
@@ -50,21 +68,16 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Breeze Live</title></head><body style="font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;padding:20px"><h1>Breeze Live</h1><p>Your backend is live.</p><input id="m" placeholder="Type a message" style="width:70%;padding:10px"><button onclick="send()" style="padding:10px">Send</button><pre id="out"></pre><script>async function send(){const m=document.getElementById("m").value;const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:m})});document.getElementById("out").textContent=JSON.stringify(await r.json(),null,2)}</script></body></html>`);
+    res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Breeze Live</title></head><body style="font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;padding:20px"><h1>Breeze Live</h1><p>Your backend is live.</p><p><strong>Free test mode is active.</strong></p><input id="m" placeholder="Type a message" style="width:70%;padding:10px"><button onclick="send()" style="padding:10px">Send</button><pre id="out"></pre><script>async function send(){const m=document.getElementById("m").value;const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:m})});document.getElementById("out").textContent=JSON.stringify(await r.json(),null,2)}</script></body></html>`);
     return;
   }
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    sendJson(res, 200, { ok: true, service: "breeze-live" });
+    sendJson(res, 200, { ok: true, service: "breeze-live", freeMode });
     return;
   }
 
   if (req.method === "POST" && url.pathname === "/api/chat") {
-    if (!client) {
-      sendJson(res, 503, { error: "AI backend is not configured yet. Add OPENAI_API_KEY to the server environment." });
-      return;
-    }
-
     try {
       const raw = await readBody(req);
       const body = JSON.parse(raw || "{}");
@@ -72,6 +85,19 @@ const server = http.createServer(async (req, res) => {
 
       if (!message) {
         sendJson(res, 400, { error: "A message is required." });
+        return;
+      }
+
+      if (freeMode) {
+        sendJson(res, 200, {
+          reply: freeModeReply(message),
+          mode: "free-test"
+        });
+        return;
+      }
+
+      if (!client) {
+        sendJson(res, 503, { error: "AI backend is not configured yet. Add OPENAI_API_KEY to the server environment." });
         return;
       }
 
@@ -97,4 +123,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(port, "0.0.0.0", () => {
   console.log(`Breeze Live backend listening on port ${port}`);
+  console.log(`Breeze free test mode: ${freeMode}`);
 });
