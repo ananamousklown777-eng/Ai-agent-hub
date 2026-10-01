@@ -47,10 +47,10 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 <span id="connection" class="connected">Connecting…</span>
 </div>
 <div class="input" style="margin-top:0">
-<input id="viewer" placeholder="Your viewer name" maxlength="40" autocomplete="off">
+<input id="viewer" aria-label="Viewer name" placeholder="Your name (shown in chat)" maxlength="40" autocomplete="off">
 <button id="simulate" type="button">Simulate Audience</button>
 </div>
-<div class="room-note">Shared room: <span id="roomLabel">main</span> • Open this page in another browser to simulate another viewer.</div>
+<div class="room-note">Enter your name above so the audience sees who is talking. • Shared room: <span id="roomLabel">main</span> • Open this page in another browser to simulate another viewer.</div>
 <div id="messages" class="messages">
 <div class="msg breeze"><b>Breeze:</b> Welcome. I'm Breeze, the AI host for AI Agent Hub.</div>
 </div>
@@ -76,7 +76,7 @@ const roomId="main";
 let lastRoomMessage=0;
 const sessionId=localStorage.getItem("breezeSessionId")||crypto.randomUUID();
 localStorage.setItem("breezeSessionId",sessionId);
-const savedViewer=localStorage.getItem("breezeViewerName")||"Viewer";
+const savedViewer=localStorage.getItem("breezeViewerName")||"";
 viewerInput.value=savedViewer;
 roomLabel.textContent=roomId;
 
@@ -134,7 +134,7 @@ async function checkBackend(){
 async function send(){
   const value=input.value.trim();
   if(!value)return;
-  const viewerName=(viewerInput.value.trim()||"Viewer").slice(0,40);
+  const viewerName=(viewerInput.value.trim()||"Guest").slice(0,40);
   localStorage.setItem("breezeViewerName",viewerName);
   input.value="";
   sendButton.disabled=true;
