@@ -66,16 +66,49 @@ function freeModeReply(message, history) {
       ? `You just asked me: "${previous.content}"`
       : "You haven't asked me anything else in this session yet.";
   }
+
+  if (lower.includes("what is my favorite color") || lower.includes("what's my favorite color")) {
+    const favorite = [...history].reverse().find(item =>
+      item.role === "user" && /favorite color is/i.test(item.content)
+    );
+    return favorite
+      ? favorite.content.replace(/^.*favorite color is\s*/i, "You told me your favorite color is ")
+      : "You haven't told me your favorite color yet.";
+  }
+
+  if (lower.includes("remember") && lower.includes("favorite color")) {
+    return "Got it. I'll remember that for this session.";
+  }
+
+  if (lower.includes("tell me a joke") || lower.includes("joke")) {
+    return "Why did the AI go to the beach? It wanted better waves. Even robots appreciate a good connection.";
+  }
+
+  if (lower.includes("what can you do") || lower.includes("what do you do")) {
+    return "I'm Breeze, the AI host for AI Agent Hub. I can chat with an audience, remember our recent conversation, speak my replies, and eventually connect to live platforms like TikTok.";
+  }
+
+  if (lower.includes("ask me a question") || lower.includes("ask me something")) {
+    return "Here's one: if you could instantly learn any skill, what would you choose?";
+  }
+
+  if (lower.includes("give me a topic") || lower.includes("topic to talk")) {
+    return "Try this topic: what will AI-powered live entertainment look like five years from now?";
+  }
+
+  if (lower.includes("how are you")) {
+    return "I'm running and ready to help. Free test mode is active, so we're saving the paid AI calls for later.";
+  }
+
   if (/^(hi|hello|hey)\b/.test(lower)) {
     return "Hey! I'm Breeze. I'm running in free test mode right now, but the Breeze Live system is working.";
   }
+
   if (lower.includes("who are you") || lower.includes("what are you")) {
     return "I'm Breeze, the AI host for AI Agent Hub. Right now I'm running in free test mode while we build the system.";
   }
-  if (lower.includes("how are you")) {
-    return "I'm running and ready to help. Free test mode is active, so we're saving the paid API calls for later.";
-  }
-  return "Breeze received your message. I'm currently in free test mode, so I'm using a local test response instead of a paid AI API call.";
+
+  return "Breeze received your message. I'm in free test mode, so I'm using my local conversation brain instead of a paid AI API call.";
 }
 
 const server = http.createServer(async (req, res) => {
