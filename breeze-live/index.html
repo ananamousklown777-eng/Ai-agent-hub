@@ -199,7 +199,7 @@ async function startLiveAvatar(){
     const r=await fetch(API_BASE+"/api/liveavatar/token",{method:"POST"});
     const data=await r.json();
     if(!r.ok) throw new Error(data.error||"LiveAvatar session could not be created.");
-    liveAvatarSession=new LiveAvatarSession(data.session_token,{autoKeepAlive:true,voiceChat:{defaultMuted:true}});\n    // Breeze is text-driven. Prevent the SDK from starting microphone capture at session startup.\n    liveAvatarSession.voiceChat.start=async()=>{};
+    liveAvatarSession=new LiveAvatarSession(data.session_token,{autoKeepAlive:true,voiceChat:{defaultMuted:true}});\n    // Breeze is text-driven. Microphone capture is blocked during SDK startup below.\n
     liveAvatarSession.on("avatar.speak_started",()=>setSpeaking(true));
     liveAvatarSession.on("avatar.speak_ended",()=>setSpeaking(false));
 
@@ -256,7 +256,7 @@ async function startLiveAvatar(){
 
     // The official SDK emits stream_ready only after both remote audio and video tracks are available.
     liveAvatarSession.on("session.stream_ready",attachStream);
-    await liveAvatarSession.start();
+    const originalGetUserMedia=navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices);\n    if(originalGetUserMedia){\n      navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException("Breeze text-only mode","NotAllowedError");};\n    }\n    try{\n      await liveAvatarSession.start();\n    }finally{\n      if(originalGetUserMedia) navigator.mediaDevices.getUserMedia=originalGetUserMedia;\n    }
 
     // In case the stream was already ready before the listener ran, retry attachment briefly.
     attachStream();
