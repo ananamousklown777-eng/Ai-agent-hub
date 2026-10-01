@@ -165,19 +165,13 @@ async function send(){
     if(!r.ok)throw new Error(data.error||"Request failed");
     await syncRoom();
     if(liveAvatarSession){
-      try{
-        status.textContent="Breeze is speaking…";
-        setSpeaking(true);
-        liveAvatarSession.repeat(data.reply);
-      }catch(error){
-        setSpeaking(false);
-        status.textContent="LiveAvatar speech error: "+(error?.message||"could not speak reply");
-        console.error("LiveAvatar speech error:",error);
-      }
+      status.textContent="Breeze is speaking…";
+      await speakWithLiveAvatar(data.reply);
+      status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected";
     }else{
       speak(data.reply);
+      status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected";
     }
-    status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected";
   }catch(error){
     addMessage("Breeze","I'm having trouble reaching my backend right now.","breeze");
     status.textContent=error.message;
@@ -194,6 +188,39 @@ function pickBreezeVoice(){
 }
 
 let speakingFallbackTimer=null;
+let avatarSpeechQueue=Promise.resolve();
+
+function speakWithLiveAvatar(text){
+  if(!liveAvatarSession || !text)return Promise.resolve();
+  avatarSpeechQueue=avatarSpeechQueue.catch(()=>{}).then(()=>new Promise(resolve=>{
+    let finished=false;
+    const cleanup=()=>{
+      liveAvatarSession.off?.("avatar.speak_ended",onEnded);
+      liveAvatarSession.off?.("avatar.speak_started",onStarted);
+      clearTimeout(timer);
+    };
+    const finish=()=>{
+      if(finished)return;
+      finished=true;
+      cleanup();
+      setSpeaking(false);
+      resolve();
+    };
+    const onStarted=()=>setSpeaking(true);
+    const onEnded=()=>finish();
+    const timer=setTimeout(finish,15000);
+    liveAvatarSession.on("avatar.speak_started",onStarted);
+    liveAvatarSession.on("avatar.speak_ended",onEnded);
+    try{
+      setSpeaking(true);
+      liveAvatarSession.repeat(text);
+    }catch(error){
+      console.error("LiveAvatar speech error:",error);
+      finish();
+    }
+  }));
+  return avatarSpeechQueue;
+}
 
 function setSpeaking(active){
   avatar.classList.toggle("speaking",active);
@@ -346,9 +373,7 @@ async function simulateAudience(){
 
       if(liveAvatarSession && data.reply){
         status.textContent=name+" is talking to Breeze…";
-        setSpeaking(true);
-        liveAvatarSession.repeat(data.reply);
-        await new Promise(resolve=>setTimeout(resolve,5000));
+        await speakWithLiveAvatar(data.reply);
       }else{
         await new Promise(resolve=>setTimeout(resolve,700));
       }
