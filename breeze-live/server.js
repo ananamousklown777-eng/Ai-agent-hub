@@ -10,7 +10,9 @@ const client = !freeMode && process.env.OPENAI_API_KEY
   : null;
 const model = process.env.OPENAI_MODEL || "gpt-5.6-luna";
 const sessions = new Map();
+const rooms = new Map();
 const MAX_HISTORY = 12;
+const MAX_ROOM_MESSAGES = 100;
 
 const systemPrompt = [
   "You are Breeze, the friendly AI host for AI Agent Hub.",
@@ -55,6 +57,18 @@ function remember(sessionId, role, content) {
   const history = getSession(sessionId);
   history.push({ role, content });
   if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
+}
+
+function getRoom(roomId) {
+  if (!rooms.has(roomId)) rooms.set(roomId, []);
+  return rooms.get(roomId);
+}
+
+function addRoomMessage(roomId, who, text, kind) {
+  const room = getRoom(roomId);
+  room.push({ id: Date.now() + Math.random(), who, text, kind });
+  if (room.length > MAX_ROOM_MESSAGES) room.splice(0, room.length - MAX_ROOM_MESSAGES);
+  return room[room.length - 1];
 }
 
 function freeModeReply(message, history) {
@@ -193,6 +207,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/api/room") {
+    const roomId = (url.searchParams.get("roomId") || "main").trim().slice(0, 100);
+    sendJson(res, 200, { roomId, messages: getRoom(roomId) });
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/health") {
     sendJson(res, 200, { ok: true, service: "breeze-live", freeMode });
     return;
@@ -203,6 +223,8 @@ const server = http.createServer(async (req, res) => {
       const raw = await readBody(req);
       const body = JSON.parse(raw || "{}");
       const message = typeof body.message === "string" ? body.message.trim() : "";
+      const viewerName = typeof body.viewerName === "string" && body.viewerName.trim() ? body.viewerName.trim().slice(0, 40) : "Viewer";
+      const roomId = typeof body.roomId === "string" && body.roomId.trim() ? body.roomId.trim().slice(0, 100) : "main";
       const sessionId = typeof body.sessionId === "string" && body.sessionId.trim()
         ? body.sessionId.trim().slice(0, 100)
         : "default";
@@ -214,10 +236,12 @@ const server = http.createServer(async (req, res) => {
 
       const history = getSession(sessionId);
       remember(sessionId, "user", message);
+      addRoomMessage(roomId, viewerName, message, "viewer");
 
       if (freeMode) {
         const reply = freeModeReply(message, history);
         remember(sessionId, "assistant", reply);
+        addRoomMessage(roomId, "Breeze", reply, "breeze");
         sendJson(res, 200, {
           reply,
           mode: "free-test",
@@ -240,6 +264,7 @@ const server = http.createServer(async (req, res) => {
 
       const reply = response.output_text || "I'm here with you, but I didn't get a response.";
       remember(sessionId, "assistant", reply);
+      addRoomMessage(roomId, "Breeze", reply, "breeze");
       sendJson(res, 200, {
         reply,
         memory: { session: true, messages: history.length }
