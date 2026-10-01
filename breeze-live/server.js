@@ -14,7 +14,7 @@ const rooms = new Map();
 const MAX_HISTORY = 12;
 const MAX_ROOM_MESSAGES = 100;
 const LIVEAVATAR_API_URL = "https://api.liveavatar.com";
-const LIVEAVATAR_SANDBOX_AVATAR_ID = "f578249f14a847f593ba8036947a00ec";
+const LIVEAVATAR_SANDBOX_AVATAR_ID = "65f9e3c9-d48b-4118-b73a-4ae2e3cbb8f0";
 let liveAvatarContextId = process.env.LIVEAVATAR_CONTEXT_ID || "";
 
 const systemPrompt = [
