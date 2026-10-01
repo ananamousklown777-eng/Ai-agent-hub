@@ -134,7 +134,13 @@ async function checkBackend(){
 async function send(){
   const value=input.value.trim();
   if(!value)return;
-  const viewerName=(viewerInput.value.trim()||"Guest").slice(0,40);
+  let viewerName=viewerInput.value.trim();
+  if(!viewerName){
+    const match=value.match(/^i(?:'|’)?m\\s+([a-z][a-z0-9 _-]{0,38})[.!?]?$/i);
+    if(match) viewerName=match[1].trim();
+  }
+  viewerName=(viewerName||"Guest").slice(0,40);
+  viewerInput.value=viewerName;
   localStorage.setItem("breezeViewerName",viewerName);
   input.value="";
   sendButton.disabled=true;
