@@ -199,7 +199,7 @@ async function startLiveAvatar(){
     const r=await fetch(API_BASE+"/api/liveavatar/token",{method:"POST"});
     const data=await r.json();
     if(!r.ok) throw new Error(data.error||"LiveAvatar session could not be created.");
-    liveAvatarSession=new LiveAvatarSession(data.session_token,{autoKeepAlive:true,voiceChat:{defaultMuted:true}});
+    liveAvatarSession=new LiveAvatarSession(data.session_token,{autoKeepAlive:true,voiceChat:false});
     liveAvatarSession.on("avatar.speak_started",()=>setSpeaking(true));
     liveAvatarSession.on("avatar.speak_ended",()=>setSpeaking(false));
 
