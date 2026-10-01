@@ -86,7 +86,7 @@ const server = http.createServer(async (req, res) => {
         reply: response.output_text || "I'm here with you, but I didn't get a response."
       });
     } catch (error) {
-      console.error(error);
+      console.error("Breeze chat error:", error?.message || error);
       sendJson(res, 500, { error: "Breeze could not respond right now." });
     }
     return;
