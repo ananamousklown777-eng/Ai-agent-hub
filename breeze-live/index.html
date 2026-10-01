@@ -64,6 +64,8 @@ const messages=document.getElementById("messages");
 const status=document.getElementById("status");
 const connection=document.getElementById("connection");
 const sendButton=document.getElementById("send");
+const sessionId=localStorage.getItem("breezeSessionId")||crypto.randomUUID();
+localStorage.setItem("breezeSessionId",sessionId);
 
 function addMessage(who,text,kind){
   const div=document.createElement("div");
@@ -100,7 +102,7 @@ async function send(){
     const r=await fetch("/api/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:value})
+      body:JSON.stringify({message:value,sessionId})
     });
     const data=await r.json();
     if(!r.ok)throw new Error(data.error||"Request failed");
