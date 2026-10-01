@@ -9,6 +9,8 @@ const client = !freeMode && process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 const model = process.env.OPENAI_MODEL || "gpt-5.6-luna";
+const sessions = new Map();
+const MAX_HISTORY = 12;
 
 const systemPrompt = [
   "You are Breeze, the friendly AI host for AI Agent Hub.",
@@ -44,7 +46,18 @@ function readBody(req) {
   });
 }
 
-function freeModeReply(message) {
+function getSession(sessionId) {
+  if (!sessions.has(sessionId)) sessions.set(sessionId, []);
+  return sessions.get(sessionId);
+}
+
+function remember(sessionId, role, content) {
+  const history = getSession(sessionId);
+  history.push({ role, content });
+  if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
+}
+
+function freeModeReply(message, history) {
   const lower = message.toLowerCase();
 
   if (/^(hi|hello|hey)\b/.test(lower)) {
@@ -89,16 +102,25 @@ const server = http.createServer(async (req, res) => {
       const raw = await readBody(req);
       const body = JSON.parse(raw || "{}");
       const message = typeof body.message === "string" ? body.message.trim() : "";
+      const sessionId = typeof body.sessionId === "string" && body.sessionId.trim()
+        ? body.sessionId.trim().slice(0, 100)
+        : "default";
 
       if (!message) {
         sendJson(res, 400, { error: "A message is required." });
         return;
       }
 
+      const history = getSession(sessionId);
+      remember(sessionId, "user", message);
+
       if (freeMode) {
+        const reply = freeModeReply(message, history);
+        remember(sessionId, "assistant", reply);
         sendJson(res, 200, {
-          reply: freeModeReply(message),
-          mode: "free-test"
+          reply,
+          mode: "free-test",
+          memory: { session: true, messages: history.length }
         });
         return;
       }
@@ -111,12 +133,18 @@ const server = http.createServer(async (req, res) => {
       const response = await client.responses.create({
         model,
         instructions: systemPrompt,
-        input: message,
+        input: [
+          ...history.map(item => ({ role: item.role, content: item.content })),
+          { role: "user", content: message }
+        ],
         max_output_tokens: 180
       });
 
+      const reply = response.output_text || "I'm here with you, but I didn't get a response.";
+      remember(sessionId, "assistant", reply);
       sendJson(res, 200, {
-        reply: response.output_text || "I'm here with you, but I didn't get a response."
+        reply,
+        memory: { session: true, messages: history.length }
       });
     } catch (error) {
       console.error("Breeze chat error:", error?.message || error);
