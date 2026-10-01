@@ -198,6 +198,21 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
 
+  if (req.method === "GET" && url.pathname === "/breeze-avatar.jpg") {
+    try {
+      const image = await readFile(new URL("./breeze-avatar.jpg", import.meta.url));
+      res.writeHead(200, {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "public, max-age=300"
+      });
+      res.end(image);
+    } catch (error) {
+      console.error("Breeze avatar error:", error?.message || error);
+      sendJson(res, 404, { error: "Breeze avatar could not be loaded." });
+    }
+    return;
+  }
+
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
     try {
       const html = await readFile(new URL("./index.html", import.meta.url), "utf8");
