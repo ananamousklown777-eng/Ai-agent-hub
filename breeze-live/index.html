@@ -165,8 +165,15 @@ async function send(){
     if(!r.ok)throw new Error(data.error||"Request failed");
     await syncRoom();
     if(liveAvatarSession){
-      liveAvatarSession.message(data.reply);
-      setSpeaking(true);
+      try{
+        status.textContent="Breeze is speaking…";
+        setSpeaking(true);
+        await liveAvatarSession.message(data.reply);
+      }catch(error){
+        setSpeaking(false);
+        status.textContent="LiveAvatar speech error: "+(error?.message||"could not speak reply");
+        console.error("LiveAvatar speech error:",error);
+      }
     }else{
       speak(data.reply);
     }
