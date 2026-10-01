@@ -168,7 +168,7 @@ async function send(){
       try{
         status.textContent="Breeze is speaking…";
         setSpeaking(true);
-        await liveAvatarSession.message(data.reply);
+        liveAvatarSession.repeat(data.reply);
       }catch(error){
         setSpeaking(false);
         status.textContent="LiveAvatar speech error: "+(error?.message||"could not speak reply");
