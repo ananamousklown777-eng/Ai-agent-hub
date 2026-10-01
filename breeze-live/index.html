@@ -328,9 +328,9 @@ async function simulateAudience(){
     ["John","What's happening in the live?"],
     ["Sam","Tell us a joke!"]
   ];
-  for(const [name,message] of viewers){
-    try{
-      await fetch(API_BASE+"/api/chat",{
+  try{
+    for(const [name,message] of viewers){
+      const r=await fetch(API_BASE+"/api/chat",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
@@ -340,12 +340,26 @@ async function simulateAudience(){
           roomId
         })
       });
-      await new Promise(resolve=>setTimeout(resolve,700));
-    }catch{}
+      const data=await r.json();
+      if(!r.ok) throw new Error(data.error||"Audience simulation failed");
+      await syncRoom();
+
+      if(liveAvatarSession && data.reply){
+        status.textContent=name+" is talking to Breeze…";
+        setSpeaking(true);
+        liveAvatarSession.repeat(data.reply);
+        await new Promise(resolve=>setTimeout(resolve,5000));
+      }else{
+        await new Promise(resolve=>setTimeout(resolve,700));
+      }
+    }
+    status.textContent="Audience simulation complete";
+  }catch(error){
+    status.textContent="Audience simulation: "+(error?.message||"failed");
+  }finally{
+    setSpeaking(false);
+    simulateButton.disabled=false;
   }
-  await syncRoom();
-  simulateButton.disabled=false;
-  status.textContent="Audience simulation complete";
 }
 
 startLiveAvatarButton.addEventListener("click",startLiveAvatar);
