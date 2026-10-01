@@ -202,17 +202,18 @@ async function startLiveAvatar(){
     liveAvatarSession=new LiveAvatarSession(data.session_token,{autoKeepAlive:true,voiceChat:{defaultMuted:true}});
     liveAvatarSession.on("avatar.speak_started",()=>setSpeaking(true));
     liveAvatarSession.on("avatar.speak_ended",()=>setSpeaking(false));
-    await liveAvatarSession.start();
-    avatar.classList.add("live-mode");
-    startLiveAvatarButton.textContent="Breeze LiveAvatar Connected";
-    speakingLabel.textContent="🎥 Real-time Breeze is connected";
 
-    // LiveAvatar publishes its real video/audio tracks asynchronously.
-    // The official SDK exposes "session.stream_ready" when both tracks are ready.
+    // Register this BEFORE start(). The SDK can emit stream_ready during startup.
     const attachStream = () => {
       try{
+        avatar.classList.add("live-mode");
         liveAvatarSession.attach(liveAvatarVideo);
+        liveAvatarVideo.autoplay=true;
+        liveAvatarVideo.playsInline=true;
+        liveAvatarVideo.muted=false;
         liveAvatarVideo.play().catch(()=>{});
+        startLiveAvatarButton.textContent="Breeze LiveAvatar Connected";
+        speakingLabel.textContent="🎥 Real-time Breeze video is connected";
         status.textContent="Breeze realistic avatar: video stream connected";
       }catch(error){
         status.textContent="LiveAvatar video attach: "+(error?.message||"waiting for stream");
@@ -220,6 +221,9 @@ async function startLiveAvatar(){
     };
 
     liveAvatarSession.on("session.stream_ready", attachStream);
+    await liveAvatarSession.start();
+
+    // In case the stream was already ready before the listener ran.
     attachStream();
   }catch(error){
     liveAvatarSession=null;
