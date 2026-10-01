@@ -12,7 +12,7 @@ header{text-align:center;padding:18px 0 22px}
 .badge{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:#e53935;font-size:12px;font-weight:800;letter-spacing:.5px}
 .dot{width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 10px #fff}
 .avatar{width:min(330px,78vw);height:330px;border-radius:28px;overflow:hidden;position:relative;margin:24px auto 16px;background:#080d1c;box-shadow:0 18px 60px #0009,0 0 35px #6c63ff55;transition:transform .2s ease,box-shadow .2s ease}.avatar img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 28%}
-.avatar.speaking{animation:breezePulse .8s ease-in-out infinite alternate;box-shadow:0 20px 70px #000a,0 0 45px #9ee7ff88}.avatar.speaking::after{content:"";position:absolute;inset:0;border:3px solid #9ee7ff88;border-radius:28px;animation:breezeRing 1.2s ease-out infinite}@keyframes breezePulse{from{transform:scale(1)}to{transform:scale(1.025)}}@keyframes breezeRing{from{opacity:.8;transform:scale(1)}to{opacity:0;transform:scale(1.04)}}h1{margin:0;font-size:42px;letter-spacing:-1px}
+.avatar.speaking{animation:breezePulse .8s ease-in-out infinite alternate;box-shadow:0 20px 70px #000a,0 0 45px #9ee7ff88}.avatar.speaking::after{content:"";position:absolute;inset:0;border:3px solid #9ee7ff88;border-radius:28px;animation:breezeRing 1.2s ease-out infinite}.avatar.speaking::before{content:"";position:absolute;left:50%;bottom:14px;width:92px;height:18px;transform:translateX(-50%);border-radius:999px;background:repeating-linear-gradient(90deg,#9ee7ff 0 5px,transparent 5px 10px);opacity:.9;animation:breezeBars .45s ease-in-out infinite alternate;z-index:2}@keyframes breezePulse{from{transform:scale(1)}to{transform:scale(1.025)}}@keyframes breezeRing{from{opacity:.8;transform:scale(1)}to{opacity:0;transform:scale(1.04)}}@keyframes breezeBars{from{height:8px;transform:translateX(-50%) scaleY(.65)}to{height:24px;transform:translateX(-50%) scaleY(1)}}h1{margin:0;font-size:42px;letter-spacing:-1px}
 .subtitle{margin:7px 0 0;opacity:.72}
 .panel{background:#10172bdf;border:1px solid #ffffff18;border-radius:22px;padding:20px;box-shadow:0 20px 70px #0008;backdrop-filter:blur(12px)}
 .panel-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -36,7 +36,7 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 <main>
 <header>
 <div class="badge"><span class="dot"></span> LIVE PROTOTYPE</div>
-<div class="avatar" aria-label="Breeze AI avatar"><img src="/Ai-agent-hub/breeze-live/breeze-avatar.jpg" alt="Breeze, AI Agent Hub live host"></div>
+<div class="avatar" aria-label="Breeze AI avatar"><img src="/Ai-agent-hub/breeze-live/breeze-avatar.jpg" alt="Breeze, AI Agent Hub live host"></div><div id="speakingLabel" class="status" style="margin-top:-4px;min-height:18px"></div>
 <h1>Breeze</h1>
 <p class="subtitle">AI Agent Hub live host</p>
 </header>
@@ -75,6 +75,7 @@ const roomLabel=document.getElementById("roomLabel");
 const roomId="main";
 const API_BASE="https://ai-agent-hub-6.onrender.com";
 const avatar=document.querySelector(".avatar");
+const speakingLabel=document.getElementById("speakingLabel");
 let lastRoomMessage=0;
 const sessionId=localStorage.getItem("breezeSessionId")||crypto.randomUUID();
 localStorage.setItem("breezeSessionId",sessionId);
@@ -170,13 +171,38 @@ async function send(){
   }
 }
 
+function pickBreezeVoice(){
+  const voices=window.speechSynthesis.getVoices();
+  const preferred=voices.find(v=>/female|samantha|victoria|karen|zira|ava|susan|google us english/i.test(v.name));
+  return preferred||voices.find(v=>/^en(-US)?$/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang))||voices[0]||null;
+}
+
+function setSpeaking(active){
+  avatar.classList.toggle("speaking",active);
+  speakingLabel.textContent=active?"🔊 Breeze is speaking…":"";
+}
+
 function speak(text){
-  if(!("speechSynthesis" in window))return;
+  if(!("speechSynthesis" in window)){
+    speakingLabel.textContent="Voice playback isn't supported in this browser.";
+    return;
+  }
   window.speechSynthesis.cancel();
   const utterance=new SpeechSynthesisUtterance(text);
-  utterance.rate=1;
-  utterance.pitch=1;
+  const voice=pickBreezeVoice();
+  if(voice)utterance.voice=voice;
+  utterance.rate=.98;
+  utterance.pitch=1.02;
+  utterance.volume=1;
+  utterance.onstart=()=>setSpeaking(true);
+  utterance.onend=()=>setSpeaking(false);
+  utterance.onerror=()=>setSpeaking(false);
+  setSpeaking(false);
   window.speechSynthesis.speak(utterance);
+}
+
+if("speechSynthesis" in window){
+  window.speechSynthesis.onvoiceschanged=()=>pickBreezeVoice();
 }
 
 async function simulateAudience(){
