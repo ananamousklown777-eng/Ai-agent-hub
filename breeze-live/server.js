@@ -5,10 +5,13 @@ import { readFile } from "node:fs/promises";
 
 const port = Number(process.env.PORT || 3000);
 const freeMode = process.env.BREEZE_FREE_MODE !== "false";
-const client = !freeMode && process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const groqClient = !freeMode && process.env.GROQ_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1"
+    })
   : null;
-const model = process.env.OPENAI_MODEL || "gpt-5.6-luna";
+const model = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
 const sessions = new Map();
 const rooms = new Map();
 const MAX_HISTORY = 12;
@@ -250,12 +253,12 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      if (!client) {
-        sendJson(res, 503, { error: "AI backend is not configured yet. Add OPENAI_API_KEY to the server environment." });
+      if (!groqClient) {
+        sendJson(res, 503, { error: "AI backend is not configured yet. Add GROQ_API_KEY to the server environment." });
         return;
       }
 
-      const response = await client.responses.create({
+      const response = await groqClient.responses.create({
         model,
         instructions: systemPrompt,
         input: history.map(item => ({ role: item.role, content: item.content })),
