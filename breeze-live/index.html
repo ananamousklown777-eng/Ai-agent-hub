@@ -73,6 +73,7 @@ const viewerInput=document.getElementById("viewer");
 const simulateButton=document.getElementById("simulate");
 const roomLabel=document.getElementById("roomLabel");
 const roomId="main";
+const API_BASE="https://ai-agent-hub-6.onrender.com";
 const avatar=document.querySelector(".avatar");
 let lastRoomMessage=0;
 const sessionId=localStorage.getItem("breezeSessionId")||crypto.randomUUID();
@@ -96,7 +97,7 @@ function addMessage(who,text,kind,id){
 
 async function syncRoom(){
   try{
-    const r=await fetch("/api/room?roomId="+encodeURIComponent(roomId));
+    const r=await fetch(API_BASE+"/api/room?roomId="+encodeURIComponent(roomId));
     const data=await r.json();
     if(!r.ok)throw new Error();
     for(const item of data.messages){
@@ -121,7 +122,7 @@ function addMessageOld(who,text,kind){
 
 async function checkBackend(){
   try{
-    const r=await fetch("/api/health");
+    const r=await fetch(API_BASE+"/api/health");
     const data=await r.json();
     if(!r.ok)throw new Error();
     connection.textContent=data.freeMode?"Free test mode":"AI connected";
@@ -147,7 +148,7 @@ async function send(){
   sendButton.disabled=true;
   status.textContent="Breeze is thinking…";
   try{
-    const r=await fetch("/api/chat",{
+    const r=await fetch(API_BASE+"/api/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({message:value,sessionId,viewerName,roomId})
