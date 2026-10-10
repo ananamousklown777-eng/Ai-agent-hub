@@ -131,7 +131,7 @@ function findBusinessPolicyViolations(text, userQuestion = "") {
 }
 function findAgentFormatViolations(text, agentId) {
   const violations = [];
-  if (agentId === "delta" && !/\b(?:correction|corrected|replace|revise|instead|remove|change|use a measurement|use this checkpoint)\b/i.test(text)) {
+  if (agentId === "delta" && !/\b(?:correction|corrected|correct|replace|revise|instead|remove|change|check|verify|measure|track|confirm|avoid|use|recommend|set|calculate|compare|limit|clarify|separate|record|test|ask|identify|require|state|explain)\b/i.test(text)) {
     violations.push("critique does not provide concrete corrections");
   }
   if (agentId === "sol") {
@@ -157,7 +157,7 @@ async function askBusinessSafe(system, user, agentId = "") {
   response = await ask(correction, rewritePrompt);
   violations = [...findBusinessPolicyViolations(response, user), ...findAgentFormatViolations(response, agentId)];
   if (!response || violations.length) {
-    return { response: "Quality check could not safely validate this response, so it has been withheld. Treat this agent's contribution as incomplete and rely only on recommendations that can be checked against the business's actual information.", qualityFlagged: true };
+    return { response: "Quality check could not safely validate this response, so it has been withheld. Treat this agent's contribution as incomplete and rely only on recommendations that can be checked against the business's actual information. Validation flags: " + violations.join("; ") + ".", qualityFlagged: true };
   }
   return { response, qualityFlagged: false };
 }
