@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10151f">
+<title>Business Decision Assistant | AI Council</title>
+<style>
+:root{color-scheme:dark;--bg:#10151f;--panel:#171f2c;--line:#344154;--text:#eef3fa;--muted:#b2bfd0;--accent:#b8d8ff;--accentText:#101722}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1b2b3d 0,var(--bg) 55%);color:var(--text);font:16px/1.5 system-ui,-apple-system,sans-serif}.wrap{max-width:920px;margin:auto;padding:24px 15px 48px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.brand{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c1d9f8;font-weight:800}.pill{font-size:12px;border:1px solid #40506a;border-radius:99px;padding:5px 9px;color:var(--muted)}h1{font-size:clamp(30px,6vw,46px);line-height:1.06;letter-spacing:-.04em;margin:22px 0 12px;max-width:700px}.intro{color:var(--muted);max-width:680px;margin:0 0 20px}.panel,.agent,.sol{border:1px solid var(--line);border-radius:16px;padding:18px;background:rgba(23,31,44,.94);margin-top:16px}h2{font-size:19px;margin:0 0 5px}.hint{color:var(--muted);font-size:14px;margin:0 0 12px}label{display:block;font-weight:700;margin:14px 0 7px}input,select,textarea{display:block;width:100%;min-height:46px;border:1px solid #4a5a70;border-radius:10px;background:#0d131d;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:112px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.example{width:auto;margin:0;padding:8px 11px;background:#202c3c;border:1px solid #42536b;color:var(--text);font-size:13px}.primary{width:100%;border:0;border-radius:11px;padding:14px 16px;background:var(--accent);color:var(--accentText);font:inherit;font-weight:800;margin-top:18px}.primary:disabled{opacity:.55}.status{white-space:pre-wrap;margin-top:13px;color:var(--muted)}.results{margin-top:22px}.agent h3{font-size:18px;margin:0 0 9px}.agent .body{white-space:pre-wrap;overflow-wrap:anywhere}.agent.sol{border-color:#7997bd}.response-note{color:var(--muted);font-size:13px;margin-top:14px}.nav{color:var(--accent)}a{color:var(--accent)}.foot{margin-top:22px;color:var(--muted);font-size:13px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.wrap{padding-top:18px}.panel,.agent,.sol{padding:15px}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="top"><div class="brand">AI Agent Hub · Business tools</div><span class="pill">3-agent decision support</span></div>
+<h1>Make your next business decision with a little less guesswork.</h1>
+<p class="intro">Describe a real business problem. Quinn builds a plan, Delta challenges the weak spots, and Sol turns the discussion into concrete next steps. The Council can help you think, not guarantee results or replace your judgment.</p>
+<section class="panel">
+<h2>Tell the Council what you're working on</h2>
+<p class="hint">Specific details help. Don't include passwords, customer personal information, or other sensitive data.</p>
+<label for="access">Council access key</label>
+<input id="access" type="password" autocomplete="off" placeholder="Paste your COUNCIL_ACCESS_KEY" aria-describedby="keyhelp">
+<div id="keyhelp" class="hint">Used only for this request. This page does not save it.</div>
+<div class="grid">
+<div><label for="business">Business type</label>
+<select id="business"><option value="Local service business">Local service business</option><option value="Retail shop">Retail shop</option><option value="Restaurant or food business">Restaurant or food business</option><option value="Online business">Online business</option><option value="Freelancer or solo business">Freelancer or solo business</option><option value="Other or not decided">Other / still planning</option></select></div>
+<div><label for="budget">Available budget</label>
+<select id="budget"><option value="No budget or free tools only">Free tools only</option><option value="Under $100">Under $100</option><option value="$100–$500">$100–$500</option><option value="More than $500">More than $500</option><option value="Not sure yet">Not sure yet</option></select></div>
+</div>
+<label for="problem">What problem are you trying to solve?</label>
+<textarea id="problem" maxlength="3000" placeholder="Example: I run a small car-detailing business and need more local customers without spending much on ads."></textarea>
+<div class="examples" aria-label="Example problems">
+<button type="button" class="example" data-example="I need more local customers but have very little money for marketing.">Get more customers</button>
+<button type="button" class="example" data-example="Help me choose which marketing channel to test first and how to measure whether it works.">Choose marketing</button>
+<button type="button" class="example" data-example="Customers ask questions after business hours and I want to respond faster without losing the personal touch.">Improve customer service</button>
+<button type="button" class="example" data-example="I have an idea for a small business product and need a low-cost way to test whether people want it.">Test a business idea</button>
+</div>
+<label for="goal">What would a useful outcome look like? <span class="hint">(optional)</span></label>
+<input id="goal" maxlength="500" placeholder="Example: 5 more qualified inquiries per week">
+<button class="primary" id="run">Ask the AI Council</button>
+<div class="status" id="status" role="status" aria-live="polite"></div>
+</section>
+<section id="results" class="results" aria-live="polite"></section>
+<p class="foot"><a href="index.html">AI Agent Hub home</a> · <a href="council-test.html">Technical Council test page</a></p>
+</main>
+<script>
+const endpoint="https://freemind-counsil.onrender.com/council";
+const $=id=>document.getElementById(id);
+document.querySelectorAll("[data-example]").forEach(button=>button.addEventListener("click",()=>{$("problem").value=button.dataset.example;$("problem").focus()}));
+$("run").addEventListener("click",async()=>{
+ const key=$("access").value.trim(), problem=$("problem").value.trim(), business=$("business").value, budget=$("budget").value, goal=$("goal").value.trim();
+ $("results").replaceChildren();
+ if(!key||!problem){$("status").textContent="Enter your access key and describe the business problem first.";return;}
+ const question="Help me make a practical business decision.\nBusiness type: "+business+"\nAvailable budget: "+budget+"\nProblem: "+problem+"\nDesired outcome: "+(goal||"Not specified")+"\n\nPlease keep advice realistic for this budget. Separate facts supplied from assumptions and unknowns. Do not invent market research, statistics, prices, or guaranteed outcomes. Suggest small steps that can be tested and measured.";
+ $("run").disabled=true;
+ $("status").textContent="The Council is thinking. The free service may take up to a minute to wake up.";
+ try{
+  const response=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json","x-council-key":key},body:JSON.stringify({question})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||("Request failed with HTTP "+response.status));
+  const agents=data.agents||[];
+  $("status").textContent=data.complete===false?"Partial result. Missing response(s): "+((data.missing_agents||[]).join(", ")||"unknown")+". Treat this as incomplete.":"Council completed successfully.";
+  const order=["Sol","Quinn","Delta"];
+  agents.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
+  for(const agent of agents){
+   const card=document.createElement("article");
+   card.className="agent"+(agent.name==="Sol"?" sol":"");
+   const title=document.createElement("h3");title.textContent=agent.name+(agent.name==="Sol"?" · Your decision brief":agent.name==="Quinn"?" · Proposed plan":" · Critical review");
+   const body=document.createElement("div");body.className="body";body.textContent=agent.response||"(No response text returned.)";
+   card.append(title,body);$("results").append(card);
+  }
+  if(!agents.length)$("status").textContent="The server responded, but no agent responses were returned.";
+ }catch(error){$("status").textContent="Could not complete the Council run: "+error.message+"\nIf this mentions CORS or a network error, check that the Render service has finished deploying and try again.";}
+ finally{$("run").disabled=false;}
+});
+</script>
+</body></html>
