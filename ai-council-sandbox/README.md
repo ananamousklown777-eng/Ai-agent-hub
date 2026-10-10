@@ -4,46 +4,48 @@ A separate three-agent prototype for testing the Council before scaling toward 7
 
 ## The three agents
 
-- **Quinn** researches the supplied web pages and extracts relevant evidence.
-- **Delta** challenges the reasoning, flags unsupported claims, and looks for gaps.
-- **Sol** combines their work into a final answer and identifies uncertainty.
+- **Quinn** prepares an answer using the supplied question and evidence.
+- **Delta** challenges the answer, flags unsupported claims, and looks for gaps.
+- **Sol** combines both responses into a final summary and identifies uncertainty.
 
 These are software roles run by an AI model, not separate conscious beings.
 
-## Run the local API
+## Deploy the Council API on Render
 
-Requires Node.js 20 or newer:
+This API is designed to be deployed as a **separate service**, not as part of Breeze Live.
 
-```sh
-npm install
-npm start
-```
+- **Root Directory:** `ai-council-sandbox`
+- **Build Command:** `npm install`
+- **Start Command:** `npm start`
+- **Environment:** Node
+- **Node version:** 20 or newer
 
-The API listens on `http://127.0.0.1:3000` and provides `/health`, `/agents`, and `POST /research`.
+Add these environment variables in the new Render service's Environment settings:
 
-## Run the AI Council
+- `GROQ_API_KEY` = your private Groq API key
+- `COUNCIL_ACCESS_KEY` = a new, long random password that you create for protecting the Council endpoint
+- `GROQ_MODEL` = optional; default is `openai/gpt-oss-20b`
 
-The runner uses Groq's OpenAI-compatible chat-completions endpoint. You need a working Groq API key and available model access; API usage may have limits or costs depending on your account. Never paste a key into source code or commit it to GitHub.
+Never paste either secret into chat or commit it to GitHub. Do not reuse your Groq key as the Council access password.
 
-Set `GROQ_API_KEY` as an environment variable, then run:
+After deployment, open the service URL plus `/health`. A healthy response should show `ok: true` and `configured: true`.
+
+The protected endpoint is `POST /council`. Send JSON with a `question` and optional `urls` array (up to three HTTPS webpages), and include your Council password in the `x-council-key` request header. The endpoint runs Quinn, then Delta, then Sol and returns all three responses. The health endpoint does not reveal secrets.
+
+## Local runner
+
+The separate command-line runner uses Groq's chat-completions API. Set `GROQ_API_KEY` as an environment variable, then run:
 
 ```sh
 npm run council -- "What are the main claims and weaknesses of this article?" https://example.com
 ```
 
-You can supply more than one HTTPS page URL after the question. Example:
-
-```sh
-npm run council -- "Compare the evidence on this topic" https://example.com https://www.iana.org/domains/reserved
-```
-
-Optional model override: set `GROQ_MODEL` to a model available to your account. The default is `llama-3.3-70b-versatile`.
-
-The runner passes the same supplied page evidence to Quinn and Delta, then gives both reviews to Sol. It does not automatically search the web for URLs; for now, you supply the pages to inspect. Page content is treated as untrusted data, and the runner only makes read-only webpage requests.
+You can supply more than one HTTPS page URL after the question. It does not automatically search the web; you supply the pages to inspect.
 
 ## Current limitations
 
-- This is a small prototype, not a deployed service or a continuously running group of agents.
-- The model runner requires a provider API key and internet access from the machine running it.
-- The URL fetcher has basic checks but is not a hardened security boundary. Do not expose this prototype publicly or use it to access sensitive systems.
+- This is an experimental prototype, not a continuously running group of conscious agents.
+- The Council API requires a provider key and internet access from the deployed server.
+- Webpage fetching uses basic safeguards but is not a hardened security boundary. Treat outputs as unverified and do not send sensitive data.
+- Groq Free access has rate limits; requests may be rejected when limits are reached. Check Groq's current rate-limit documentation for your account.
 - Test with three agents before scaling. For a larger Council, use a controlled worker queue rather than launching 705 processes at once.
