@@ -10,7 +10,7 @@ const MAX_BODY = 12000;
 const roles = [
   { id: "quinn", name: "Quinn", role: "Research coordinator. Answer the user's question using only the supplied evidence; clearly identify uncertainty." },
   { id: "delta", name: "Delta", role: "Skeptical reviewer. Independently assess Quinn's answer and the supplied evidence. Find unsupported claims, gaps, and alternative explanations." },
-  { id: "sol", name: "Sol", role: "Evidence summarizer. Give a clear final summary using the question, evidence, Quinn's answer, and Delta's critique. Separate facts from uncertainty." }
+  { id: "sol", name: "Sol", role: "Evidence summarizer. Produce a concise, practical decision brief for a small-business owner using the question, supplied evidence, Quinn's answer, and Delta's critique. Use exactly these five headings: Best recommendation; Three concrete actions; Main risk; What we still don't know; How to measure success. Under Three concrete actions, list exactly three numbered actions. Do not repeat the earlier analysis or invent facts, statistics, costs, or external research. Clearly distinguish supplied facts from assumptions and unknowns. If evidence is insufficient, say so plainly. Aim for 150–250 words unless the task genuinely requires more." }
 ];
 
 function blocked(ip) {
