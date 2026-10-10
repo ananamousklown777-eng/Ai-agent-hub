@@ -101,15 +101,15 @@ async function ask(system, user) {
 
 function findBusinessPolicyViolations(text, userQuestion = "") {
   const violations = [];
-  const sentences = String(text).split(/(?<=[.!?;])\\s+|\\n+/);
-  const promoTerms = /\\b(?:flyers?|paid ads?|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\\b/i;
-  const positiveAdvice = /\\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through)\\b/i;
-  const negation = /\\b(?:do not|don't|never|avoid|without|not recommend|shouldn't|should not|rather than|instead of|exclude|skip|don't use|do not use|unless the user explicitly asks)\\b/i;
-  const duration = /\\b(?:a short period|short period|one month|a month|two weeks|three weeks|four weeks|30 days|next week|next month|within \\d+ days|for \\d+ weeks|over the next month|over the next few weeks)\\b/i;
-  const reviewSolicitation = /\\b(?:ask|tell|encourage|have|get|request)\\b.{0,100}\\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\\b.{0,100}\\b(?:reviews?|ratings?)\\b|\\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\\b.{0,100}\\b(?:leave|post|write)\\b.{0,50}\\b(?:reviews?|ratings?)\\b/i;
-  const reviewReward = /\\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\\b.{0,60}\\b(?:reviews?|ratings?)\\b|\\b(?:reviews?|ratings?)\\b.{0,60}\\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\\b/i;
-  const freeWorkForTestimonial = /\\b(?:free (?:demo|service|detail(?:ing)?|sample)|detail(?:ing)? (?:a|their|the) car for free)\\b.{0,160}\\b(?:in exchange for|for a|to get|to receive)\\b.{0,50}\\btestimonials?\\b|\\btestimonials?\\b.{0,100}\\b(?:in exchange for|in return for)\\b.{0,50}\\bfree\\b/i;
-  const userExplicitlyAskedToEvaluatePromotion = promoTerms.test(userQuestion) && /\\b(evaluate|compare|assess|analy[sz]e|whether|should|could|would|consider|test)\\b/i.test(userQuestion);
+  const sentences = String(text).split(/(?<=[.!?;])\s+|\n+/);
+  const promoTerms = /\b(?:flyers?|paid ads?|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i;
+  const positiveAdvice = /\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through)\b/i;
+  const negation = /\b(?:do not|don't|never|avoid|without|not recommend|shouldn't|should not|rather than|instead of|exclude|skip|don't use|do not use|unless the user explicitly asks)\b/i;
+  const duration = /\b(?:a short period|short period|one month|a month|two weeks|three weeks|four weeks|30 days|next week|next month|within \d+ days|for \d+ weeks|over the next month|over the next few weeks)\b/i;
+  const reviewSolicitation = /\b(?:ask|tell|encourage|have|get|request)\b.{0,100}\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:reviews?|ratings?)\b|\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:leave|post|write)\b.{0,50}\b(?:reviews?|ratings?)\b/i;
+  const reviewReward = /\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b.{0,60}\b(?:reviews?|ratings?)\b|\b(?:reviews?|ratings?)\b.{0,60}\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b/i;
+  const freeWorkForTestimonial = /\b(?:free (?:demo|service|detail(?:ing)?|sample)|detail(?:ing)? (?:a|their|the) car for free)\b.{0,160}\b(?:in exchange for|for a|to get|to receive)\b.{0,50}\btestimonials?\b|\btestimonials?\b.{0,100}\b(?:in exchange for|in return for)\b.{0,50}\bfree\b/i;
+  const userExplicitlyAskedToEvaluatePromotion = promoTerms.test(userQuestion) && /\b(evaluate|compare|assess|analy[sz]e|whether|should|could|would|consider|test)\b/i.test(userQuestion);
   const userSpecifiedTimeframe = duration.test(userQuestion);
   for (const sentence of sentences) {
     if (promoTerms.test(sentence) && positiveAdvice.test(sentence) && !negation.test(sentence) && !userExplicitlyAskedToEvaluatePromotion) violations.push("unsupported promotional tactic");
@@ -118,11 +118,11 @@ function findBusinessPolicyViolations(text, userQuestion = "") {
     if (reviewReward.test(sentence) && !negation.test(sentence)) violations.push("incentivized reviews");
     if (freeWorkForTestimonial.test(sentence) && !userExplicitlyAskedToEvaluatePromotion) violations.push("free work offered in exchange for a testimonial");
   }
-  // Catch invented weekly numeric outcomes while allowing numbers explicitly supplied by the user.
-  const numericTarget = /\\b(?:reach|target|achieve|secure|convert|generate|obtain|book|close|collect|get|aim for|at least)\\s+(?:about\\s+|around\\s+)?(\\d+)\\s+(?:new\\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\\b|\\b(\\d+)\\s+(?:new\\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\\s+(?:in|by|during|per)\\s+(?:week|day|month)\\b/ig;
+  // Catch invented numeric weekly outcomes while allowing numbers explicitly supplied by the user.
+  const numericTarget = /\b(?:reach|target|achieve|secure|convert|generate|obtain|book|close|collect|get|aim for|at least)\s+(?:about\s+|around\s+)?(\d+)\s+(?:new\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\b|\b(\d+)\s+(?:new\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\s+(?:in|by|during|per)\s+(?:week|day|month)\b/ig;
   for (const match of String(text).matchAll(numericTarget)) {
     const n = match[1] || match[2];
-    if (n && !new RegExp("\\\\b" + n + "\\\\b").test(userQuestion)) {
+    if (n && !new RegExp("\\b" + n + "\\b").test(userQuestion)) {
       violations.push("unsupported numeric business target");
       break;
     }
@@ -131,19 +131,18 @@ function findBusinessPolicyViolations(text, userQuestion = "") {
 }
 function findAgentFormatViolations(text, agentId) {
   const violations = [];
-  if (agentId === "delta" && !/\\b(?:correction|corrected|replace|revise|instead|remove|change|use a measurement|use this checkpoint)\\b/i.test(text)) {
+  if (agentId === "delta" && !/\b(?:correction|corrected|replace|revise|instead|remove|change|use a measurement|use this checkpoint)\b/i.test(text)) {
     violations.push("critique does not provide concrete corrections");
   }
   if (agentId === "sol") {
     const required = ["Best recommendation", "Three concrete actions", "Main risk", "What we still don't know", "How to measure success"];
     for (const heading of required) {
-      const escaped = heading.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
-      if (!new RegExp("^\\\\s*#{0,6}\\\\s*" + escaped + "\\\\s*$", "im").test(text)) {
+      if (!new RegExp("^\\s*#{0,6}\\s*" + heading + "\\s*$", "im").test(text)) {
         violations.push("missing Sol heading: " + heading);
       }
     }
-    const actionSection = String(text).match(/(?:^|\\n)\\s*#{0,6}\\s*Three concrete actions\\s*\\n([\\s\\S]*?)(?=\\n\\s*#{0,6}\\s*(?:Main risk|What we still don't know|How to measure success)\\s*\\n|$)/i);
-    const numbered = actionSection ? [...actionSection[1].matchAll(/^\\s*\\d+[.)]\\s+/gm)].length : 0;
+    const actionSection = String(text).match(/(?:^|\n)\s*#{0,6}\s*Three concrete actions\s*\n([\s\S]*?)(?=\n\s*#{0,6}\s*(?:Main risk|What we still don't know|How to measure success)\s*\n|$)/i);
+    const numbered = actionSection ? [...actionSection[1].matchAll(/^\s*\d+[.)]\s+/gm)].length : 0;
     if (numbered !== 3) violations.push("Sol must provide exactly three numbered actions");
   }
   return violations;
@@ -153,8 +152,8 @@ async function askBusinessSafe(system, user, agentId = "") {
   if (!response) return { response: "", qualityFlagged: false };
   let violations = [...findBusinessPolicyViolations(response, user), ...findAgentFormatViolations(response, agentId)];
   if (!violations.length) return { response, qualityFlagged: false };
-  const correction = system + "\\n\\nFINAL QUALITY GATE: Preserve user-supplied goals and deadlines as objectives. Do not invent numeric weekly inquiry, appointment, or customer targets; use measurable tracking checkpoints instead. Do not recommend free work in exchange for testimonials. A testimonial is not a customer review; only genuine customers may be asked voluntarily for honest reviews of actual experiences, without reward or pressure. Never invent conversion rates, costs, or results. Never recommend asking non-customers for reviews or rewarding reviews. Do not assume a business qualifies for a Google Business Profile; state eligibility as something to verify. If a numeric goal is supplied, explain goal-derived checkpoints and the lead formula, but say the lead count is unknown if the actual conversion rate is missing. Do not recommend unsupported promotional spending unless the user explicitly asked to evaluate that tactic. Delta must provide concrete corrections for each key weakness. Sol must use exactly the five required headings and exactly three numbered actions under Three concrete actions. Return corrected ordinary Markdown.";
-  const rewritePrompt = user + "\\n\\nQUALITY CHECK FAILED: Your previous answer contained: " + violations.join(", ") + ". Rewrite the entire answer to fix every listed issue. Preserve the user’s stated goals, constraints, and deadline. Do not invent numeric weekly outcomes. If a numeric goal is supplied, include the lead formula and say the lead count is unknown if the actual conversion rate is missing. Delta must propose specific corrections. Sol must use exactly the five required headings and exactly three numbered actions. Provide only the corrected answer.";
+  const correction = system + "\n\nFINAL QUALITY GATE: Preserve user-supplied goals and deadlines as objectives. Do not invent numeric weekly inquiry, appointment, or customer targets; use measurable tracking checkpoints instead. Do not recommend free work in exchange for testimonials. A testimonial is not a customer review; only genuine customers may be asked voluntarily for honest reviews of actual experiences, without reward or pressure. Never invent conversion rates, costs, or results. Never recommend asking non-customers for reviews or rewarding reviews. Do not assume a business qualifies for a Google Business Profile; state eligibility as something to verify. If a numeric goal is supplied, explain goal-derived checkpoints and the lead formula, but say the lead count is unknown if the actual conversion rate is missing. Do not recommend unsupported promotional spending unless the user explicitly asked to evaluate that tactic. Delta must provide concrete corrections for each key weakness. Sol must use exactly the five required headings and exactly three numbered actions under Three concrete actions. Return corrected ordinary Markdown.";
+  const rewritePrompt = user + "\n\nQUALITY CHECK FAILED: Your previous answer contained: " + violations.join(", ") + ". Rewrite the entire answer to fix every listed issue. Preserve the user’s stated goals, constraints, and deadline. Do not invent numeric weekly outcomes. If a numeric goal is supplied, include the lead formula and say the lead count is unknown if the actual conversion rate is missing. Delta must propose specific corrections. Sol must use exactly the five required headings and exactly three numbered actions. Provide only the corrected answer.";
   response = await ask(correction, rewritePrompt);
   violations = [...findBusinessPolicyViolations(response, user), ...findAgentFormatViolations(response, agentId)];
   if (!response || violations.length) {
