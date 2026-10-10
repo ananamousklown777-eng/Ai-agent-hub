@@ -94,7 +94,19 @@ function send(res, status, data) {
   res.writeHead(status, { "content-type":"application/json; charset=utf-8", "cache-control":"no-store", "x-content-type-options":"nosniff" });
   res.end(JSON.stringify(data));
 }
+const ALLOWED_ORIGIN = "https://ananamousklown777-eng.github.io";
 const server = http.createServer(async (req,res) => {
+  const origin = req.headers.origin;
+  if (origin === ALLOWED_ORIGIN) {
+    res.setHeader("access-control-allow-origin", ALLOWED_ORIGIN);
+    res.setHeader("vary", "Origin");
+    res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
+    res.setHeader("access-control-allow-headers", "content-type, x-council-key");
+  }
+  if (req.method === "OPTIONS" && origin === ALLOWED_ORIGIN) {
+    res.writeHead(204);
+    return res.end();
+  }
   if (req.method === "GET" && req.url === "/health") return send(res,200,{ok:true,service:"ai-council-sandbox",agents:3,model:MODEL,configured:Boolean(API_KEY && ACCESS_KEY)});
   if (req.method !== "POST" || req.url !== "/council") return send(res,404,{error:"Not found"});
   if (!API_KEY || !ACCESS_KEY) return send(res,503,{error:"Server setup is incomplete. Configure GROQ_API_KEY and COUNCIL_ACCESS_KEY in environment variables."});
