@@ -59,13 +59,14 @@ function appendInline(parent,text){
 }
 function renderMarkdown(root,source){
  const normalized=String(source).replace(/\r/g,"")
-  .replace(/\\([*_\x60#|])/g,"$1")
-  .replace(/\s+(?=\*\*(?:Best recommendation|Three concrete actions|Main risk|What we still don't know|How to measure success|Known facts(?: \(from your message\))?|Known Facts|Assumptions|Unknowns|Prioritized Action Plan|Quick-Start Checklist|Quick Test Checklist|Three key weaknesses \/ risks in Quinn’s plan|How to use these checks|Weakness \d+[^*]*|Why it works|Steps|Budget|Measurement)\*\*)/gi,"\n\n")
-  .replace(/\*\*(Best recommendation|Three concrete actions|Main risk|What we still don't know|How to measure success|Known facts(?: \(from your message\))?|Known Facts|Assumptions|Unknowns|Prioritized Action Plan|Quick-Start Checklist|Quick Test Checklist|Three key weaknesses \/ risks in Quinn’s plan|How to use these checks|Weakness \d+[^*]*|Why it works|Steps|Budget|Measurement)\*\*/gi,"\n## $1\n")
-  .replace(/\s+(?=\d+[.)]\s+)/g,"\n")
-  .replace(/\s+(?=[-*+]\s+)/g,"\n")
-  .replace(/^\s*#{2,6}\s*\n\s*1[.)]\s+([^\n]+)$/gm,"\n## $1")
-  .replace(/^\s*#{2,6}\s*$/gm,"");
+  .replace(/\\\\([\\\\*_\\x60#|])/g,"$1")
+  .replace(/^[ \\t]*#{1,6}[ \\t]*\\n[ \\t]*\\d+[.)][ \\t]+([^\\n]+)$/gm,"\\n## $1")
+  .replace(/\\s+(?=\\*\\*(?:Best recommendation|Three concrete actions|Main risk|What we still don't know|How to measure success|Known facts(?: \\(from your message\\))?|Known Facts|Assumptions|Unknowns|Prioritized Action Plan|Quick-Start Checklist|Quick Test Checklist|Three key weaknesses \\/ risks in Quinn’s plan|How to use these checks|Weakness \\d+[^*]*|Why it works|Steps|Budget|Measurement)\\*\\*)/gi,"\\n\\n")
+  .replace(/\\*\\*(Best recommendation|Three concrete actions|Main risk|What we still don't know|How to measure success|Known facts(?: \\(from your message\\))?|Known Facts|Assumptions|Unknowns|Prioritized Action Plan|Quick-Start Checklist|Quick Test Checklist|Three key weaknesses \\/ risks in Quinn’s plan|How to use these checks|Weakness \\d+[^*]*|Why it works|Steps|Budget|Measurement)\\*\\*/gi,"\\n## $1\\n")
+  .replace(/\\s+(?=\\d+[.)]\\s+)/g,"\\n")
+  .replace(/\\s+(?=[-*+]\\s+)/g,"\\n")
+  .replace(/^[ \\t]*#{1,6}[ \\t]*$/gm,"")
+  .replace(/\\n{3,}/g,"\\n\\n");
  const lines=normalized.split("\n");let i=0;
  while(i<lines.length){
   const line=lines[i].trim();
@@ -100,7 +101,7 @@ $("run").addEventListener("click",async()=>{
  const key=$("access").value.trim(), problem=$("problem").value.trim(), business=$("business").value, budget=$("budget").value, goal=$("goal").value.trim();
  $("results").replaceChildren();
  if(!key||!problem){$("status").textContent="Enter your access key and describe the business problem first.";return;}
- const question="Help me make a practical business decision.\nBusiness type: "+business+"\nAvailable budget: "+budget+"\nProblem: "+problem+"\nDesired outcome: "+(goal||"Not specified")+"\n\nKeep advice grounded only in the details provided. The business type and budget range are not evidence of actual margins, costs, customer volume, local market conditions, or available capacity. Do not invent or propose specific dollar amounts, percentages, growth targets such as a 10–20% booking increase, discount offers, printing costs, paid promotions, referral rewards, commissions, free sample services, or timelines. Do not give examples containing made-up prices, percentages, or targets. Prefer a no-cost first test, such as asking existing customers for feedback or tracking inquiries, and explain what real information to collect before spending or setting a target. Separate supplied facts, assumptions, and unknowns. No tables. Use ordinary Markdown without backslashes before Markdown punctuation. Put each heading on its own line and leave a blank line between sections.";
+ const question="Help me make a practical business decision.\nBusiness type: "+business+"\nAvailable budget: "+budget+"\nProblem: "+problem+"\nDesired outcome: "+(goal||"Not specified")+"\n\nKeep advice grounded only in the details provided. The business type and budget range are not evidence of actual margins, costs, customer volume, local market conditions, or available capacity. Do not invent or propose specific dollar amounts, percentages, growth targets such as a 10–20% booking increase, discount offers, printing costs, paid promotions, referral rewards, commissions, free sample services, or timelines. Do not give examples containing made-up prices, percentages, or targets. Unless the user explicitly asks to evaluate promotions, do not propose discounts, free services or samples, referral rewards, commissions, giveaways, or cross-promotions, even as examples. Prefer a no-cost first test, such as asking existing customers for feedback or tracking inquiries, and explain what real information to collect before spending or setting a target. Separate supplied facts, assumptions, and unknowns. No tables. Use ordinary Markdown without backslashes before Markdown punctuation. Put each heading on its own line and leave a blank line between sections.";
  $("run").disabled=true;
  $("status").textContent="The Council is thinking. The free service may take up to a minute to wake up.";
  try{
