@@ -47,6 +47,7 @@
 const endpoint="https://freemind-counsil.onrender.com/council";
 const $=id=>document.getElementById(id);
 function appendInline(parent,text){
+ text=text.replace(/\\([*_\x60#|])/g,"$1");
  const pattern=/\*\*([^*]+)\*\*|\*([^*]+)\*|\x60([^\x60]+)\x60/g;
  let last=0,match;
  while((match=pattern.exec(text))){
@@ -57,7 +58,9 @@ function appendInline(parent,text){
  if(last<text.length)parent.append(document.createTextNode(text.slice(last)));
 }
 function renderMarkdown(root,source){
- const lines=String(source).replace(/\r/g,"").split("\n");let i=0;
+ const normalized=String(source).replace(/\r/g,"").replace(/\\([*_\x60#|])/g,"$1")
+  .replace(/\s+(?=(?:Best recommendation|Three concrete actions|Main risk|What we still don't know|How to measure success|Known facts(?: \(from your message\))?|Assumptions|Unknowns|Prioritized Action Plan|Quick-Start Checklist|Three key weaknesses \/ risks in Quinn’s plan|How to use these checks)\s*(?:\*\*)?)/g,"\n");
+ const lines=normalized.split("\n");let i=0;
  while(i<lines.length){
   const line=lines[i].trim();
   if(!line){i++;continue;}
