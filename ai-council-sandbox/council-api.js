@@ -103,8 +103,8 @@ function findBusinessPolicyViolations(text, userQuestion = "") {
   const violations = [];
   const sentences = String(text).split(/(?<=[.!?;])\s+|\n+/);
   const promoTerms = /\b(?:flyers?|paid ads?|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|local SEO packages?|SEO agencies?)\b/i;
-  const positiveAdvice = /\b(?:try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through)\b/i;
-  const negation = /\b(?:do not|don't|never|avoid|without|not recommend|shouldn't|should not|rather than|instead of|exclude|skip|don't use|do not use)\b/i;
+    const positiveAdvice = /\b(?:try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through)\b/i;
+    const negation = /\b(?:do not|don't|never|avoid|without|not recommend|shouldn't|should not|rather than|instead of|exclude|skip|don't use|do not use|unless the user explicitly asks)\b/i;
   const duration = /\b(?:a short period|short period|one month|a month|two weeks|three weeks|four weeks|30 days|next week|next month|within \d+ days|for \d+ weeks|over the next month|over the next few weeks)\b/i;
   const userExplicitlyAskedToEvaluatePromotion = promoTerms.test(userQuestion) && /\b(evaluate|compare|assess|analy[sz]e|whether|should|could|would|consider|test)\b/i.test(userQuestion);
   const userSpecifiedTimeframe = duration.test(userQuestion);
