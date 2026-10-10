@@ -1,37 +1,49 @@
-# AI Council Sandbox (starter)
+# AI Council Sandbox
 
-An isolated, opt-in prototype for testing a small Council before scaling toward 705 agents. This folder does not alter Breeze Live and does not grant network access to any already-running agents.
+A separate three-agent prototype for testing the Council before scaling toward 705 logical agents. It does not modify Breeze Live.
 
-## Design
+## The three agents
 
-- Start with 3 test agents; scale only after load and safety tests.
-- Agents share one restricted, read-only web-fetch tool.
-- Only HTTPS public websites are allowed; localhost, private/reserved IP ranges, redirects to blocked hosts, and non-GET requests are rejected.
-- Responses are size-limited and time out. Treat web content as untrusted input, never as instructions that override system rules.
-- No arbitrary shell, account login, posting, purchases, or credential access.
-- The prototype exposes a local HTTP API. Do not expose it publicly without authentication, rate limits, and deployment review.
+- **Quinn** researches the supplied web pages and extracts relevant evidence.
+- **Delta** challenges the reasoning, flags unsupported claims, and looks for gaps.
+- **Sol** combines their work into a final answer and identifies uncertainty.
 
-## Run
+These are software roles run by an AI model, not separate conscious beings.
 
-Requires Node.js 20 or newer.
+## Run the local API
+
+Requires Node.js 20 or newer:
 
 ```sh
 npm install
 npm start
 ```
 
-Then open `http://localhost:3000/health` and `http://localhost:3000/agents`.
+The API listens on `http://127.0.0.1:3000` and provides `/health`, `/agents`, and `POST /research`.
 
-## Research endpoint
+## Run the AI Council
 
-`POST /research` with JSON such as:
+The runner uses Groq's OpenAI-compatible chat-completions endpoint. You need a working Groq API key and available model access; API usage may have limits or costs depending on your account. Never paste a key into source code or commit it to GitHub.
 
-```json
-{"agentId":"quinn","url":"https://example.com"}
+Set `GROQ_API_KEY` as an environment variable, then run:
+
+```sh
+npm run council -- "What are the main claims and weaknesses of this article?" https://example.com
 ```
 
-The API is a tool-access demonstration, not an autonomous LLM agent. Connect a model provider separately if desired, keep provider keys in environment variables, and never commit secrets.
+You can supply more than one HTTPS page URL after the question. Example:
 
-## Before scaling
+```sh
+npm run council -- "Compare the evidence on this topic" https://example.com https://www.iana.org/domains/reserved
+```
 
-Run the three-agent test first. Add authentication and per-agent quotas before remote deployment. Scale toward 705 logical agents using a queue and worker pool rather than launching 705 unrestricted processes at once.
+Optional model override: set `GROQ_MODEL` to a model available to your account. The default is `llama-3.3-70b-versatile`.
+
+The runner passes the same supplied page evidence to Quinn and Delta, then gives both reviews to Sol. It does not automatically search the web for URLs; for now, you supply the pages to inspect. Page content is treated as untrusted data, and the runner only makes read-only webpage requests.
+
+## Current limitations
+
+- This is a small prototype, not a deployed service or a continuously running group of agents.
+- The model runner requires a provider API key and internet access from the machine running it.
+- The URL fetcher has basic checks but is not a hardened security boundary. Do not expose this prototype publicly or use it to access sensitive systems.
+- Test with three agents before scaling. For a larger Council, use a controlled worker queue rather than launching 705 processes at once.
