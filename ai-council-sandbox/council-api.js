@@ -84,7 +84,7 @@ async function ask(system, user) {
       const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST", signal: controller.signal,
         headers: { authorization: "Bearer " + API_KEY, "content-type": "application/json" },
-        body: JSON.stringify({ model: MODEL, temperature: 0.3, max_completion_tokens: 2048, reasoning_effort: "low", include_reasoning: false, messages: [
+        body: JSON.stringify({ model: MODEL, temperature: 0.3, max_completion_tokens: 1024, reasoning_effort: "low", include_reasoning: false, messages: [
           { role: "system", content: system },
           { role: "user", content: user + retryNote }
         ] })
