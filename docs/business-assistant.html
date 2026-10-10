@@ -61,7 +61,7 @@ function renderMarkdown(root,source){
  const normalized=String(source).replace(/\r/g,"")
   .replace(/\\+([*_\x60#|])/g,"$1")
   .replace(/^[ \t]*[ #\\]+[ \t]*\n[ \t]*\d+[.)][ \t]+([^\n]+)$/gm,"#### $1")
-  .replace(/^\s*[*_-]{3,}\s*\n(?=\s*\d+[.)]\s+)/gm,"")
+  .replace(/^[ \t]*[*_-]{3,}[ \t]*$/gm,"")
   .replace(/^[ \t]*-[ \t]*$/gm,"")
   .replace(/^[ \t]*-[ \t]*$/gm,"")
   .replace(/\s+(?=\*\*(?:Best recommendation|Three concrete actions|Main risk|What we still don't know|How to measure success|Known facts(?: \(from your message\))?|Known Facts|Assumptions|Unknowns|Prioritized Action Plan|Quick-Start Checklist|Quick Test Checklist|Three key weaknesses \/ risks in Quinn’s plan|How to use these checks|Weakness \d+[^*]*|Why it works|Steps|Budget|Measurement)\*\*)/gi,"\n\n")
@@ -70,7 +70,7 @@ function renderMarkdown(root,source){
   .replace(/\s+(?=[-*+]\s+)/g,"\n")
   .replace(/^[ \t]*#{1,6}[ \t]*$/gm,"")
   .replace(/\n{3,}/g,"\n\n");
- const lines=normalized.split("\n");let i=0;
+ const lines=normalized.split("\n");let i=0,nextOrderedStart=1;
  while(i<lines.length){
   const line=lines[i].trim();
   if(!line){i++;continue;}
@@ -92,8 +92,8 @@ function renderMarkdown(root,source){
    root.append(list);continue;
   }
   if(/^\d+[.)]\s+/.test(line)){
-   const list=document.createElement("ol");list.style.paddingLeft="23px";list.style.margin="6px 0 12px";
-   while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i])){const li=document.createElement("li");appendInline(li,lines[i].trim().replace(/^\d+[.)]\s+/,""));list.append(li);i++;}
+   const list=document.createElement("ol");list.start=nextOrderedStart;list.style.paddingLeft="23px";list.style.margin="6px 0 12px";
+   while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i])){const li=document.createElement("li");appendInline(li,lines[i].trim().replace(/^\d+[.)]\s+/,""));list.append(li);i++;nextOrderedStart++;}
    root.append(list);continue;
   }
   const p=document.createElement("p");p.style.margin="7px 0 11px";appendInline(p,line);root.append(p);i++;
@@ -113,6 +113,7 @@ $("run").addEventListener("click",async()=>{
   if(!response.ok)throw new Error(data.error||("Request failed with HTTP "+response.status));
   const agents=data.agents||[];
   $("status").textContent=data.complete===false?"Partial result. Missing response(s): "+((data.missing_agents||[]).join(", ")||"unknown")+". Treat this as incomplete.":"Council completed successfully.";
+  if((data.quality_warnings||[]).length)$("status").textContent+=" Quality check withheld an unsafe or unsupported response from: "+data.quality_warnings.join(", ")+". Treat that agent as incomplete.";
   const order=["Sol","Quinn","Delta"];
   agents.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   for(const agent of agents){
@@ -121,7 +122,9 @@ $("run").addEventListener("click",async()=>{
    const title=document.createElement("h3");title.textContent=agent.name+(agent.name==="Sol"?" · Your decision brief":agent.name==="Quinn"?" · Proposed plan":" · Critical review");
    const body=document.createElement("div");body.className="body";
    renderMarkdown(body,agent.response||"(No response text returned.)");
-   card.append(title,body);$("results").append(card);
+   card.append(title,body);
+   if(agent.quality_flagged){const warning=document.createElement("p");warning.className="response-note";warning.textContent="Quality check: this response was withheld because unsupported advice remained after a rewrite.";card.append(warning);}
+   $("results").append(card);
   }
   if(!agents.length)$("status").textContent="The server responded, but no agent responses were returned.";
  }catch(error){$("status").textContent="Could not complete the Council run: "+error.message+"\nIf this mentions CORS or a network error, check that the Render service has finished deploying and try again.";}
