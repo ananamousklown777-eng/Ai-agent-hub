@@ -137,11 +137,11 @@ function findAgentFormatViolations(text, agentId) {
   if (agentId === "sol") {
     const required = ["Best recommendation", "Three concrete actions", "Main risk", "What we still don't know", "How to measure success"];
     for (const heading of required) {
-      if (!new RegExp("^\\s*#{0,6}\\s*" + heading + "\\s*$", "im").test(text)) {
+      if (!new RegExp("^\\s*#{0,6}\\s*(?:\\*\\*)?" + heading + "(?:\\*\\*)?\\s*$", "im").test(text)) {
         violations.push("missing Sol heading: " + heading);
       }
     }
-    const actionSection = String(text).match(/(?:^|\n)\s*#{0,6}\s*Three concrete actions\s*\n([\s\S]*?)(?=\n\s*#{0,6}\s*(?:Main risk|What we still don't know|How to measure success)\s*\n|$)/i);
+    const actionSection = String(text).match(/(?:^|\n)\s*#{0,6}\s*(?:\*\*)?Three concrete actions(?:\*\*)?\s*\n([\s\S]*?)(?=\n\s*#{0,6}\s*(?:\*\*)?(?:Main risk|What we still don't know|How to measure success)(?:\*\*)?\s*\n|$)/i);
     const numbered = actionSection ? [...actionSection[1].matchAll(/^\s*\d+[.)]\s+/gm)].length : 0;
     if (numbered !== 3) violations.push("Sol must provide exactly three numbered actions");
   }
