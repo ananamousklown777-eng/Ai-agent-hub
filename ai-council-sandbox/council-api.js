@@ -79,7 +79,7 @@ async function ask(system, user) {
     const timer = setTimeout(() => controller.abort(), 45000);
     try {
       const retryNote = attempt === 2
-        ? "\\n\\nIMPORTANT: Your previous attempt returned an empty response. Provide a substantive plain-text answer. If evidence is insufficient, state that clearly."
+        ? "\n\nIMPORTANT: Your previous attempt returned an empty response. Provide a substantive plain-text answer. If evidence is insufficient, state that clearly."
         : "";
       const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST", signal: controller.signal,
