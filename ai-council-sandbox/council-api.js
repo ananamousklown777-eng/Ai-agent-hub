@@ -5,7 +5,7 @@ import net from "node:net";
 const PORT = Number(process.env.PORT || 3000);
 const API_KEY = process.env.GROQ_API_KEY;
 const ACCESS_KEY = process.env.COUNCIL_ACCESS_KEY;
-const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
 const MAX_BODY = 12000;
 const roles = [
   { id: "quinn", name: "Quinn", role: "Research coordinator. Answer the user's question using only the supplied evidence; clearly identify uncertainty." },
