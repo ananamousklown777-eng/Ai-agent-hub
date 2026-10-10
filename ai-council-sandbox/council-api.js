@@ -110,7 +110,6 @@ function findBusinessPolicyViolations(text, userQuestion = "") {
   const reviewReward = /\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b.{0,60}\b(?:reviews?|ratings?)\b|\b(?:reviews?|ratings?)\b.{0,60}\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b/i;
   const freeWorkForTestimonial = /\b(?:free (?:demo|service|detail(?:ing)?|sample)|detail(?:ing)? (?:a|their|the) car for free)\b.{0,160}\b(?:in exchange for|for a|to get|to receive)\b.{0,50}\btestimonials?\b|\btestimonials?\b.{0,100}\b(?:in exchange for|in return for)\b.{0,50}\bfree\b/i;
   const userExplicitlyAskedToEvaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
-  const userSpecifiedTimeframe = duration.test(userQuestion);
   for (const sentence of sentences) {
     if (promoTerms.test(sentence) && positiveAdvice.test(sentence) && !negation.test(sentence) && !userExplicitlyAskedToEvaluatePromotion) violations.push("unsupported promotional tactic");
     const durationMatch = sentence.match(duration);
