@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Council Test</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#10131a;color:#eef2f8;font:16px system-ui,sans-serif}.wrap{max-width:760px;margin:auto;padding:24px 16px 48px}h1{margin:0 0 8px;font-size:28px}.muted{color:#aeb8c8;line-height:1.5}.panel,.agent{border:1px solid #303949;border-radius:14px;padding:16px;margin-top:16px;background:#171d27}label{display:block;font-weight:650;margin:14px 0 7px}input,textarea{display:block;width:100%;border:1px solid #465268;border-radius:9px;background:#0f141c;color:#fff;padding:12px;font:inherit}textarea{min-height:125px;resize:vertical}button{margin-top:16px;border:0;border-radius:10px;padding:13px 18px;background:#b8d8ff;color:#101722;font-weight:750;font-size:16px;width:100%}button:disabled{opacity:.55}#status{white-space:pre-wrap;margin-top:14px}.agent h2{margin:0 0 10px;font-size:19px}.response{white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere}.warning{font-size:13px;color:#c4cedc;margin-top:12px}
+</style>
+</head>
+<body><main class="wrap">
+<h1>AI Council Test</h1>
+<p class="muted">Run one question through Quinn, Delta, and Sol. The access key is used only for this request and is not saved by this page.</p>
+<section class="panel">
+<label for="access">Council access key</label>
+<input id="access" type="password" autocomplete="off" placeholder="Paste your COUNCIL_ACCESS_KEY here">
+<label for="question">Test question</label>
+<textarea id="question">Three AI agents disagree about whether a claim is supported by evidence. How should they resolve the disagreement without inventing facts?</textarea>
+<button id="run">Run Council</button>
+<div id="status" role="status" aria-live="polite"></div>
+<div class="warning">Use this only on your own device. Don't share screenshots showing your access key.</div>
+</section>
+<section id="results" aria-live="polite"></section>
+</main>
+<script>
+const endpoint = "https://freemind-counsil.onrender.com/council";
+const run = document.getElementById("run");
+const statusBox = document.getElementById("status");
+const results = document.getElementById("results");
+run.addEventListener("click", async () => {
+  const key = document.getElementById("access").value.trim();
+  const question = document.getElementById("question").value.trim();
+  results.replaceChildren();
+  if (!key || !question) { statusBox.textContent = "Enter the access key and a question first."; return; }
+  run.disabled = true;
+  statusBox.textContent = "Sending the question to the Council. The free service may need up to a minute to wake up.";
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {"content-type":"application/json","x-council-key":key},
+      body: JSON.stringify({question})
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || ("Request failed with HTTP " + response.status));
+    statusBox.textContent = "Council completed successfully.";
+    for (const agent of (data.agents || [])) {
+      const card = document.createElement("article");
+      card.className = "agent";
+      const heading = document.createElement("h2");
+      heading.textContent = agent.name + " · " + agent.role;
+      const body = document.createElement("div");
+      body.className = "response";
+      body.textContent = agent.response || "(No response text returned.)";
+      card.append(heading, body);
+      results.append(card);
+    }
+    if (!data.agents || !data.agents.length) statusBox.textContent = "The server responded, but no agent responses were returned.";
+  } catch (error) {
+    statusBox.textContent = "Test failed: " + error.message + "\nIf the message mentions CORS, wait for the Render redeploy to finish and refresh this page.";
+  } finally {
+    run.disabled = false;
+  }
+});
+</script>
+</body></html>
