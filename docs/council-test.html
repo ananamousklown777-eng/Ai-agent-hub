@@ -42,7 +42,9 @@ run.addEventListener("click", async () => {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || ("Request failed with HTTP " + response.status));
-    statusBox.textContent = "Council completed successfully.";
+    statusBox.textContent = data.complete === false
+      ? "Council returned a partial result. Empty agent(s): " + ((data.missing_agents || []).join(", ") || "unknown") + ". Check the cards below; this run is not complete."
+      : "Council completed successfully.";
     for (const agent of (data.agents || [])) {
       const card = document.createElement("article");
       card.className = "agent";
