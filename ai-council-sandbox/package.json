@@ -1,0 +1,9 @@
+{
+  "name": "ai-council-sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated three-agent internet-tool sandbox starter",
+  "type": "module",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" }
+}
