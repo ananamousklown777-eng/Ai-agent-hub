@@ -47,7 +47,7 @@
 const endpoint="https://freemind-counsil.onrender.com/council";
 const $=id=>document.getElementById(id);
 function appendInline(parent,text){
- const pattern=/\\*\\*([^*]+)\\*\\*|\\*([^*]+)\\*|\x60([^\x60]+)\x60/g;
+ const pattern=/\*\*([^*]+)\*\*|\*([^*]+)\*|\x60([^\x60]+)\x60/g;
  let last=0,match;
  while((match=pattern.exec(text))){
   if(match.index>last)parent.append(document.createTextNode(text.slice(last,match.index)));
@@ -57,30 +57,30 @@ function appendInline(parent,text){
  if(last<text.length)parent.append(document.createTextNode(text.slice(last)));
 }
 function renderMarkdown(root,source){
- const lines=String(source).replace(/\\r/g,"").split("\\n");let i=0;
+ const lines=String(source).replace(/\r/g,"").split("\n");let i=0;
  while(i<lines.length){
   const line=lines[i].trim();
   if(!line){i++;continue;}
-  if(/^\\s*[-*_]{3,}\\s*$/.test(line)){const hr=document.createElement("hr");root.append(hr);i++;continue;}
-  if(line.startsWith("|")&&i+1<lines.length&&/^\\s*\\|?\\s*:?-{3,}/.test(lines[i+1])){
+  if(/^\s*[-*_]{3,}\s*$/.test(line)){const hr=document.createElement("hr");root.append(hr);i++;continue;}
+  if(line.startsWith("|")&&i+1<lines.length&&/^\s*\|?\s*:?-{3,}/.test(lines[i+1])){
    const table=document.createElement("table"),thead=document.createElement("thead"),tbody=document.createElement("tbody");
    table.style.cssText="width:100%;border-collapse:collapse;margin:10px 0;display:block;overflow-x:auto";
-   const cells=s=>s.trim().replace(/^\\|/,"").replace(/\\|$/,"").split("|").map(x=>x.trim());
+   const cells=s=>s.trim().replace(/^\|/,"").replace(/\|$/,"").split("|").map(x=>x.trim());
    const makeRow=(values,tag)=>{const tr=document.createElement("tr");for(const value of values){const cell=document.createElement(tag);cell.style.cssText="border:1px solid #40506a;padding:7px;text-align:left;vertical-align:top";appendInline(cell,value);tr.append(cell);}return tr;};
    thead.append(makeRow(cells(lines[i]),"th"));i+=2;
    while(i<lines.length&&lines[i].trim().startsWith("|")){tbody.append(makeRow(cells(lines[i]),"td"));i++;}
    table.append(thead,tbody);root.append(table);continue;
   }
-  const hm=line.match(/^(#{1,4})\\s+(.+)$/);
+  const hm=line.match(/^(#{1,4})\s+(.+)$/);
   if(hm){const h=document.createElement("h"+Math.min(hm[1].length+2,6));h.style.margin="14px 0 6px";appendInline(h,hm[2]);root.append(h);i++;continue;}
-  if(/^[-*+]\\s+/.test(line)){
+  if(/^[-*+]\s+/.test(line)){
    const list=document.createElement("ul");list.style.paddingLeft="23px";list.style.margin="6px 0 12px";
-   while(i<lines.length&&/^\\s*[-*+]\\s+/.test(lines[i])){const li=document.createElement("li");appendInline(li,lines[i].trim().replace(/^[-*+]\\s+/,""));list.append(li);i++;}
+   while(i<lines.length&&/^\s*[-*+]\s+/.test(lines[i])){const li=document.createElement("li");appendInline(li,lines[i].trim().replace(/^[-*+]\s+/,""));list.append(li);i++;}
    root.append(list);continue;
   }
-  if(/^\\d+[.)]\\s+/.test(line)){
+  if(/^\d+[.)]\s+/.test(line)){
    const list=document.createElement("ol");list.style.paddingLeft="23px";list.style.margin="6px 0 12px";
-   while(i<lines.length&&/^\\s*\\d+[.)]\\s+/.test(lines[i])){const li=document.createElement("li");appendInline(li,lines[i].trim().replace(/^\\d+[.)]\\s+/,""));list.append(li);i++;}
+   while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i])){const li=document.createElement("li");appendInline(li,lines[i].trim().replace(/^\d+[.)]\s+/,""));list.append(li);i++;}
    root.append(list);continue;
   }
   const p=document.createElement("p");p.style.margin="7px 0 11px";appendInline(p,line);root.append(p);i++;
