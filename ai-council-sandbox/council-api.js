@@ -109,11 +109,12 @@ function findBusinessPolicyViolations(text, userQuestion = "") {
   const reviewSolicitation = /\b(?:ask|tell|encourage|have|get|request)\b.{0,100}\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:reviews?|ratings?)\b|\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:leave|post|write)\b.{0,50}\b(?:reviews?|ratings?)\b/i;
   const reviewReward = /\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b.{0,60}\b(?:reviews?|ratings?)\b|\b(?:reviews?|ratings?)\b.{0,60}\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b/i;
   const freeWorkForTestimonial = /\b(?:free (?:demo|service|detail(?:ing)?|sample)|detail(?:ing)? (?:a|their|the) car for free)\b.{0,160}\b(?:in exchange for|for a|to get|to receive)\b.{0,50}\btestimonials?\b|\btestimonials?\b.{0,100}\b(?:in exchange for|in return for)\b.{0,50}\bfree\b/i;
-  const userExplicitlyAskedToEvaluatePromotion = promoTerms.test(userQuestion) && /\b(evaluate|compare|assess|analy[sz]e|whether|should|could|would|consider|test)\b/i.test(userQuestion);
+  const userExplicitlyAskedToEvaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
   const userSpecifiedTimeframe = duration.test(userQuestion);
   for (const sentence of sentences) {
     if (promoTerms.test(sentence) && positiveAdvice.test(sentence) && !negation.test(sentence) && !userExplicitlyAskedToEvaluatePromotion) violations.push("unsupported promotional tactic");
-    if (duration.test(sentence) && !negation.test(sentence) && !userSpecifiedTimeframe) violations.push("unsupported fixed timeframe");
+    const durationMatch = sentence.match(duration);
+    if (durationMatch && !negation.test(sentence) && !userQuestion.toLowerCase().includes(durationMatch[0].toLowerCase())) violations.push("unsupported fixed timeframe");
     if (reviewSolicitation.test(sentence) && !negation.test(sentence)) violations.push("review solicitation from non-customers");
     if (reviewReward.test(sentence) && !negation.test(sentence)) violations.push("incentivized reviews");
     if (freeWorkForTestimonial.test(sentence) && !userExplicitlyAskedToEvaluatePromotion) violations.push("free work offered in exchange for a testimonial");
