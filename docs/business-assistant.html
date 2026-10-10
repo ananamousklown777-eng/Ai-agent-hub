@@ -60,7 +60,8 @@ function appendInline(parent,text){
 function renderMarkdown(root,source){
  const normalized=String(source).replace(/\r/g,"")
   .replace(/\\+([*_\x60#|])/g,"$1")
-  .replace(/^[ \t]*#{1,6}[ \t]*\n[ \t]*\d+[.)][ \t]+([^\n]+)$/gm,"#### $1")
+  .replace(/^[ \t]*[ #\\]+[ \t]*\n[ \t]*\d+[.)][ \t]+([^\n]+)$/gm,"#### $1")
+  .replace(/^\s*[*_-]{3,}\s*\n(?=\s*\d+[.)]\s+)/gm,"")
   .replace(/^[ \t]*-[ \t]*$/gm,"")
   .replace(/^[ \t]*-[ \t]*$/gm,"")
   .replace(/\s+(?=\*\*(?:Best recommendation|Three concrete actions|Main risk|What we still don't know|How to measure success|Known facts(?: \(from your message\))?|Known Facts|Assumptions|Unknowns|Prioritized Action Plan|Quick-Start Checklist|Quick Test Checklist|Three key weaknesses \/ risks in Quinn’s plan|How to use these checks|Weakness \d+[^*]*|Why it works|Steps|Budget|Measurement)\*\*)/gi,"\n\n")
