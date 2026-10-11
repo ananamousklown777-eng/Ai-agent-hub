@@ -128,8 +128,12 @@ function findBusinessPolicyViolations(text, userQuestion = "") {
 }
 function findAgentFormatViolations(text, agentId) {
   const violations = [];
-  if (agentId === "delta" && !/\b(?:correction|corrected|correct|replace|revise|instead|remove|change|check|verify|measure|track|confirm|avoid|use|recommend|set|calculate|compare|limit|clarify|separate|record|test|ask|identify|require|state|explain)\b/i.test(text)) {
-    violations.push("critique does not provide concrete corrections");
+  if (agentId === "delta") {
+    const numberedFindings = [...String(text).matchAll(/^\s*\d+[.)]\s+/gm)].length;
+    if (numberedFindings !== 3) violations.push("Delta must provide exactly three numbered findings");
+    if (!/\b(?:correction|corrected|correct|replace|revise|instead|remove|change|check|verify|measure|track|confirm|avoid|use|recommend|set|calculate|compare|limit|clarify|separate|record|test|ask|identify|require|state|explain)\b/i.test(text)) {
+      violations.push("critique does not provide concrete corrections");
+    }
   }
   if (agentId === "sol") {
     const required = ["Best recommendation", "Three concrete actions", "Main risk", "What we still don't know", "How to measure success"];
@@ -209,7 +213,7 @@ const server = http.createServer(async (req,res) => {
     ];
     const missing = agents.filter(agent => !agent.response.trim()).map(agent => agent.id);
     const qualityWarnings = agents.filter(agent => agent.quality_flagged).map(agent => agent.id);
-    return send(res,200,{ok:true,complete:missing.length === 0,missing_agents:missing,quality_warnings:qualityWarnings,model:MODEL,agents});
+    return send(res,200,{ok:true,complete:missing.length === 0 && qualityWarnings.length === 0,missing_agents:missing,quality_warnings:qualityWarnings,model:MODEL,agents});
   } catch(e) {
     const msg = e.name === "AbortError" ? "The request timed out. Try a shorter question or fewer sources." : (e.message || "Request failed.");
     return send(res,400,{error:msg});
