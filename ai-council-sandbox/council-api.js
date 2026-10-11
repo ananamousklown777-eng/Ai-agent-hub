@@ -196,7 +196,7 @@ const server = http.createServer(async (req,res) => {
     const deltaResult = await askBusinessSafe(roles[1].role, deltaPrompt, "delta");
     const delta = deltaResult.response;
     const solPrompt = question + "\n\nQuinn's answer:\n" + (quinn || "[Quinn returned no text.]") +
-      "\n\nDelta's critique:\n" + (delta || "[Delta returned no text after an automatic retry. Do not pretend a critique exists; identify uncertainty and limitations directly.]");
+      "\n\nDelta's critique:\n" + (delta || "[Delta returned no text. Do not pretend a critique exists; identify uncertainty and limitations directly.]");
     const solResult = await askBusinessSafe(roles[2].role, solPrompt, "sol");
     const sol = solResult.response;
     const agents = [
