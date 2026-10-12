@@ -21,3 +21,6 @@ test("flags cross-promotions", () => assert.ok(findBusinessPolicyViolations("Use
 test("flags review requests to non-customers", () => assert.ok(findBusinessPolicyViolations("Ask friends and neighbors to leave reviews.", question).some(x => x.includes("non-customers"))));
 test("flags incentivized reviews", () => assert.ok(findBusinessPolicyViolations("Offer a gift in exchange for reviews.", question).some(x => x.includes("incentivized reviews"))));
 test("flags unsupported fixed timelines", () => assert.ok(findBusinessPolicyViolations("You should see results within 30 days.", question).some(x => x.includes("fixed timeframe"))));
+
+test("flags asking customers to name friends who may need the service", () => assert.ok(findBusinessPolicyViolations("Ask each satisfied client to name a friend or family member who might need detailing.", question).some(x => x.includes("referral solicitation"))));
+test("flags asking customers to recommend the business to friends", () => assert.ok(findBusinessPolicyViolations("Ask each satisfied customer to recommend you to friends or family.", question).some(x => x.includes("referral solicitation"))));
