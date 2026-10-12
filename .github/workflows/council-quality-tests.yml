@@ -11,6 +11,8 @@ on:
       - "ai-council-sandbox/**"
       - ".github/workflows/council-quality-tests.yml"
   workflow_dispatch:
+  schedule:
+    - cron: "23 13 * * *"
 
 jobs:
   quality-policy:
@@ -32,3 +34,34 @@ jobs:
         run: |
           node -e "const fs=require('node:fs'); const html=fs.readFileSync('docs/council-quality-test.html','utf8'); const match=html.match(/<script>([\\s\\S]*?)<\\/script>/); if(!match) throw new Error('No inline script found'); fs.writeFileSync('/tmp/council-quality-test.js',match[1]);"
           node --check /tmp/council-quality-test.js
+
+  live-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check live Council backend health
+        env:
+          HEALTH_URL: https://freemind-counsil.onrender.com/health
+        run: |
+          set -euo pipefail
+          response=""
+          for attempt in {1..8}; do
+            if response="$(curl --silent --show-error --fail --max-time 20 "$HEALTH_URL")"; then
+              break
+            fi
+            echo "Health check attempt $attempt failed; retrying in 15 seconds."
+            sleep 15
+          done
+          if [ -z "$response" ]; then
+            echo "::error::Council backend health endpoint did not respond after retries."
+            exit 1
+          fi
+          echo "$response" | node --input-type=module -e '
+            let raw = "";
+            for await (const chunk of process.stdin) raw += chunk;
+            const data = JSON.parse(raw);
+            if (data.ok !== true) throw new Error("Health endpoint did not report ok=true");
+            if (data.service !== "ai-council-sandbox") throw new Error("Unexpected service name: " + data.service);
+            if (data.agents !== 3) throw new Error("Expected 3 agents; received " + data.agents);
+            if (data.configured !== true) throw new Error("Backend reports required environment variables are not configured");
+            console.log("Live health check passed: 3 agents configured.");
+          '
