@@ -23,13 +23,13 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
   }
   const tactics = [
     ["paid advertising", /\b(?:paid ads?|paid advertising|paid promotions?|paid boosts?|boosted posts?)\b/i],
-    ["discounts", /\bdiscounts?\b/i],
+    ["discounts", /\b(?:discounts?|coupons?|promotional pricing|special offers?)\b/i],
     ["giveaways", /\bgiveaways?\b/i],
     ["referral rewards", /\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
     ["cross-promotions", /\b(?:cross-promotions?|cross-posting|flyer partnerships?)\b/i],
     ["free services or samples", /\b(?:free(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:details?|services?|samples?|demos?|consultations?|wash(?:es)?)|complimentary services?)\b/i]
   ];
-  const evaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid advertising|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
+  const evaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid advertising|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|coupons?|promotional pricing|special offers?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
   for (const sentence of sentences) {
     for (const [label, pattern] of tactics) {
       const match = pattern.exec(sentence);
