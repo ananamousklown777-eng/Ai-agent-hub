@@ -23,4 +23,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm test
+      - name: Check backend JavaScript syntax
+        run: node --check council-api.js
+      - name: Run quality-policy regression tests
+        run: npm test
+      - name: Check the quality-test page JavaScript syntax
+        working-directory: .
+        run: |
+          node -e "const fs=require('node:fs'); const html=fs.readFileSync('docs/council-quality-test.html','utf8'); const match=html.match(/<script>([\\s\\S]*?)<\\/script>/); if(!match) throw new Error('No inline script found'); fs.writeFileSync('/tmp/council-quality-test.js',match[1]);"
+          node --check /tmp/council-quality-test.js
