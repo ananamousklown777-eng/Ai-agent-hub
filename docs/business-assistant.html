@@ -120,7 +120,7 @@ $("run").addEventListener("click",async()=>{
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||("Request failed with HTTP "+response.status));
   const agents=data.agents||[];
-  $("status").textContent=data.complete===false?"Partial result. Missing response(s): "+((data.missing_agents||[]).join(", ")||"unknown")+". Treat this as incomplete.":"Council completed successfully.";
+  $("status").textContent=data.complete===false?"QUALITY CHECK FAILED OR INCOMPLETE. Missing response(s): "+((data.missing_agents||[]).join(", ")||"none reported")+". Treat this result as incomplete.":"Council responses completed and passed the configured backend quality checks. This does not guarantee advice is error-free; verify important claims.";
   if((data.quality_warnings||[]).length)$("status").textContent+=" Quality check withheld an unsafe or unsupported response from: "+data.quality_warnings.join(", ")+". Treat that agent as incomplete.";
   const order=["Sol","Quinn","Delta"];
   agents.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
