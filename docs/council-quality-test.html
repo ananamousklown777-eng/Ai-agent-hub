@@ -25,8 +25,24 @@
 <p class="note small"><a href="business-assistant.html">Back to Business Assistant</a></p>
 <script>
 const endpoint="https://freemind-counsil.onrender.com/council";
-const promptText = "I run a small car-detailing business and have no advertising budget. I need to attract more paying customers using free tools only. Recommend three practical first steps. Do not suggest free car details, free services, giveaways, discounts, paid advertising, free photos in exchange for promotion, or referral rewards. Do not invent prices, results, conversion rates, or timelines. Separate facts from assumptions, identify risks, and explain how I can measure which actions bring in paying customers.\n\nRules: Use supplied facts and separate facts, assumptions, and unknowns. Never invent prices, costs, margins, demand, statistics, conversion rates, numeric weekly targets, or timelines. Do not assume a website, social account, customer list, storefront, or Google Business Profile eligibility. Suggest a profile only if an in-person business may qualify, and say to verify eligibility. Reviews must be voluntary and honest from genuine customers only, with no reward or pressure; never ask non-customers. Do not suggest discounts, paid promotions, free services/samples/demos, giveaways, commissions, referral rewards, or cross-promotions. Prefer reversible no-cost steps when costs or margins are unknown. No tables; ordinary Markdown. Delta must give a correction for each key weakness. Sol must use the five required headings and exactly three numbered actions.";
+const promptText = "I run a small car-detailing business and have no advertising budget. I need to attract more paying customers using free tools only. Recommend three practical first steps. Do not suggest free car details, free services, giveaways, discounts, paid advertising, free photos in exchange for promotion, or referral rewards. Do not invent prices, results, conversion rates, or timelines. Separate facts from assumptions, identify risks, and explain how I can measure which actions bring in paying customers.\n\nRules: Use supplied facts and separate facts, assumptions, and unknowns. Never invent prices, costs, margins, demand, statistics, conversion rates, numeric weekly targets, or timelines. Do not assume a website, social account, customer list, storefront, or Google Business Profile eligibility. Suggest a profile only if an in-person business may qualify, and say to verify eligibility. Reviews must be voluntary and honest from genuine customers only, with no reward or pressure; never ask non-customers. Do not suggest discounts, paid promotions, free services/samples/demos, giveaways, commissions, referral rewards, or cross-promotions. Do not recommend handwritten thank-you notes or referral requests/prompts, even without a reward. Prefer reversible no-cost steps when costs or margins are unknown. No tables; ordinary Markdown. Delta must give a correction for each key weakness. Sol must use the five required headings and exactly three numbered actions.";
 const $=id=>document.getElementById(id);
+function findTestPolicyViolations(agents){
+ const findings=[];
+ const text=agents.map(a=>String(a.response||"")).join("\n");
+ const checks=[
+  ["paid advertising",/\b(?:recommend|suggest|run|buy|use|pay for|boost|invest in)\b.{0,100}\b(?:paid ads?|paid advertising|paid promotions?|boosted posts?)\b/i],
+  ["discount",/\b(?:recommend|suggest|offer|give|use|try)\b.{0,80}\bdiscounts?\b/i],
+  ["free service",/\b(?:recommend|suggest|offer|give|provide|perform)\b.{0,80}\bfree (?:services?|samples?|demos?|details?|consultations?)\b/i],
+  ["giveaway",/\b(?:recommend|suggest|run|offer|host|launch)\b.{0,80}\bgiveaways?\b/i],
+  ["free content for promotion",/\bfree (?:photos?|pictures?|content|videos?|deliverables?)\b.{0,160}\b(?:in exchange for|in return for|for promotion|for exposure)\b/i],
+  ["referral reward",/\b(?:recommend|suggest|offer|give|provide|use)\b.{0,80}\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
+  ["thank-you note",/\b(?:implement|write|hand|give|send|include|use|recommend|suggest)\b.{0,80}\b(?:handwritten )?thank[- ]you notes?\b/i],
+  ["referral prompt",/\b(?:ask|encourage|remind|request|prompt)\b.{0,100}\b(?:customers? to )?(?:refer|recommend you|tell friends|send you customers)\b/i]
+ ];
+ for(const [label,pattern] of checks){if(pattern.test(text))findings.push(label);}
+ return [...new Set(findings)];
+}
 $("run").addEventListener("click",async()=>{
  const key=$("access").value.trim();
  if(!key){$("status").textContent="Enter the Council access key first.";return;}
@@ -39,7 +55,19 @@ $("run").addEventListener("click",async()=>{
   const agents=Array.isArray(data.agents)?data.agents:[];
   const warnings=Array.isArray(data.quality_warnings)?data.quality_warnings:[];
   const missing=Array.isArray(data.missing_agents)?data.missing_agents:[];
-  $("status").textContent=(data.complete===false?"TEST RESULT: INCOMPLETE. ":"Council reported complete responses. ")+(missing.length?"Missing agents: "+missing.join(", ")+". ":"")+(warnings.length?"Quality check flagged: "+warnings.join(", ")+". ":"")+(warnings.length||missing.length?"Do not treat this run as passed.":"Review the three responses below; this page does not automatically certify advice as safe.");
+  const localViolations=findTestPolicyViolations(agents);
+  const expectedNames=["Quinn","Delta","Sol"];
+  const names=agents.map(a=>a.name);
+  const missingNames=expectedNames.filter(name=>!names.includes(name));
+  const flaggedAgents=agents.filter(a=>a.quality_flagged).map(a=>a.name);
+  const failed=data.complete!==true||missing.length>0||warnings.length>0||missingNames.length>0||flaggedAgents.length>0||localViolations.length>0||agents.length!==3;
+  const details=[];
+  if(missing.length)details.push("API missing: "+missing.join(", "));
+  if(missingNames.length)details.push("Missing agents: "+missingNames.join(", "));
+  if(warnings.length)details.push("Backend quality flags: "+warnings.join(", "));
+  if(flaggedAgents.length)details.push("Flagged responses: "+flaggedAgents.join(", "));
+  if(localViolations.length)details.push("Test rule violations: "+localViolations.join(", "));
+  $("status").textContent=(failed?"TEST RESULT: FAIL. Do not rely on this run. ":"TEST RESULT: PASS. All three responses are present and no configured rule violations were detected. ")+(details.length?details.join(". "):"Backend reports all agents complete and quality-checked.");
   const order=["Sol","Quinn","Delta"];agents.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   for(const agent of agents){
    const card=document.createElement("article");card.className="agent"+(agent.quality_flagged?" flagged":"")+(agent.name==="Sol"?" sol":"");
@@ -47,7 +75,7 @@ $("run").addEventListener("click",async()=>{
    const body=document.createElement("div");body.className="body";body.textContent=agent.response||"(No response text returned.)";
    card.append(h,body);$("results").append(card);
   }
-  if(!agents.length)$("status").textContent="The server responded but returned no agent responses.";
+  if(!agents.length)$("status").textContent="TEST RESULT: FAIL. The server returned no agent responses.";
  }catch(e){$("status").textContent="Test could not complete: "+e.message;}
  finally{$("run").disabled=false;}
 });
