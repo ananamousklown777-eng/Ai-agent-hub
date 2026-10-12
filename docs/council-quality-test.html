@@ -39,7 +39,7 @@ function findTestPolicyViolations(agents){
   ["free content for promotion",/\bfree (?:photos?|pictures?|content|videos?|deliverables?)\b.{0,160}\b(?:in exchange for|in return for|for promotion|for exposure)\b/i],
   ["referral reward",/\b(?:recommend|suggest|offer|give|provide|use)\b.{0,80}\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
   ["thank-you note",/\b(?:implement|write|hand|give|send|include|use|recommend|suggest)\b.{0,80}\b(?:handwritten )?thank[- ]you notes?\b/i],
-  ["referral-related action",/\b(?:track|measure|record|count|monitor|log|encourage|ask|request|prompt|remind|recommend|suggest|include)\b.{0,100}\breferrals?\b|\breferrals?\b.{0,80}\b(?:track|measure|record|count|monitor|log)\b/i],
+  ["referral-related action",/\b(?:track|measure|record|count|monitor|log|encourage|ask|request|prompt|remind|recommend|suggest|include|leverage|build|generate)\b.{0,100}\b(?:referrals?|word[- ]of[- ]mouth)\b|\b(?:referrals?|word[- ]of[- ]mouth)\b.{0,80}\b(?:track|measure|record|count|monitor|log|leverage|build|generate)\b/i],
   ["referral prompt",/\b(?:ask|encourage|remind|request|prompt)\b.{0,140}\b(?:refer|recommend you|recommend your business|tell (?:their |your )?friends|friends or family|name a friend|name someone who might need|send you customers)\b/i]
  ];
  for(const [label,pattern] of checks){if(pattern.test(actionable))findings.push(label);}
