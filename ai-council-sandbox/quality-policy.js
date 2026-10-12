@@ -21,7 +21,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     ["giveaways", /\bgiveaways?\b/i],
     ["referral rewards", /\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
     ["cross-promotions", /\b(?:cross-promotions?|cross-posting|flyer partnerships?)\b/i],
-    ["free services or samples", /\b(?:free(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:details?|services?|samples?|demos?|consultations?|washes?)|complimentary services?)\b/i]
+    ["free services or samples", /\b(?:free(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:details?|services?|samples?|demos?|consultations?|wash(?:es)?)|complimentary services?)\b/i]
   ];
   const evaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid advertising|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
   for (const sentence of sentences) {
