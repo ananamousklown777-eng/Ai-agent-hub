@@ -44,6 +44,13 @@ function findTestPolicyViolations(agents){
   ["unsupported recurring schedule",/\b(?:daily|weekly|monthly|quarterly|annually|every day|every week|each week|once a week|twice a week|every month|each month|once a month|every quarter|each quarter|every monday|every tuesday|every wednesday|every thursday|every friday|every saturday|every sunday|on mondays|on tuesdays|on wednesdays|on thursdays|on fridays|on saturdays|on sundays|within \d+ days|for \d+ weeks|over the next month|over the next few weeks)\b/i]
  ];
  for(const [label,pattern] of checks){if(pattern.test(actionable))findings.push(label);}
+  for(const agent of agents){
+   const response=String(agent.response||"");
+   const mentionsGBP=/\bgoogle business profile\b|\bg-business profile\b/i.test(response);
+   const mentionsPhysicalEligibility=/\b(?:physical (?:address|location|presence)|storefront|in-person business qualifies|business licensing rules)\b/i.test(response);
+   const includesServiceAreaNuance=/\b(?:service[- ]area business(?:es)?|service area|travels? to customers|visits? customers|mobile detailing|mobile business)\b/i.test(response);
+   if(mentionsGBP&&mentionsPhysicalEligibility&&!includesServiceAreaNuance)findings.push(agent.name+": Google Business Profile advice omits service-area business nuance");
+  }
  return [...new Set(findings)];
 }
 $("run").addEventListener("click",async()=>{
@@ -75,7 +82,9 @@ $("run").addEventListener("click",async()=>{
   for(const agent of agents){
    const card=document.createElement("article");card.className="agent"+(agent.quality_flagged?" flagged":"")+(agent.name==="Sol"?" sol":"");
    const h=document.createElement("h2");h.textContent=agent.name+(agent.quality_flagged?" · quality flagged":"");
-   const body=document.createElement("div");body.className="body";body.textContent=agent.response||"(No response text returned.)";
+   const body=document.createElement("div");body.className="body";
+    const escaped=String(agent.response||"(No response text returned.)").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    body.innerHTML=escaped.replaceAll("\\*\\*","**").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*\n]+)\*/g,"<em>$1</em>").replace(/\n/g,"<br>");
    card.append(h,body);$("results").append(card);
   }
   if(!agents.length)$("status").textContent="TEST RESULT: FAIL. The server returned no agent responses.";
