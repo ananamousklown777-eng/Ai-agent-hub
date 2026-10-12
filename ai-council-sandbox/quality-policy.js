@@ -3,7 +3,7 @@ function isNegatedBefore(text, index) {
   return /\b(?:do not|don't|never|avoid|not recommend|shouldn't|should not|without|skip|exclude|forbid|prohibit)\b[^.!?;]{0,85}$/i.test(prefix);
 }
 function hasActionVerb(sentence) {
-  return /\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through|implement|encourage|ask|request|remind|include|provide|perform|send|write|track|measure|record|count|monitor|log)\b/i.test(sentence);
+  return /\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through|implement|encourage|ask|request|remind|include|provide|perform|send|write|track|measure|record|count|monitor|log|leverage)\b/i.test(sentence);
 }
 function userBans(userQuestion, pattern) {
   const ban = /\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,500}/ig;
@@ -21,7 +21,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     ["giveaways", /\bgiveaways?\b/i],
     ["referral rewards", /\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
     ["cross-promotions", /\b(?:cross-promotions?|cross-posting|flyer partnerships?)\b/i],
-    ["free services or samples", /\b(?:free(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b[\s,.:;()\u0022\u0027“”\-–—]*){0,3})(?:car )?(?:details?|services?|samples?|demos?|consultations?|washes?)|complimentary services?)\b/i]
+    ["free services or samples", /\b(?:free(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:details?|services?|samples?|demos?|consultations?|washes?)|complimentary services?)\b/i]
   ];
   const evaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid advertising|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
   for (const sentence of sentences) {
