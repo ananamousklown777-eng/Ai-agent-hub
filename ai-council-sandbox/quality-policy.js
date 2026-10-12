@@ -6,7 +6,7 @@ function hasActionVerb(sentence) {
   return /\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through|implement|encourage|ask|request|remind|include|provide|perform)\b/i.test(sentence);
 }
 function userBans(userQuestion, pattern) {
-  const ban = /\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,180}/ig;
+  const ban = /\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,500}/ig;
   for (const m of String(userQuestion).matchAll(ban)) if (pattern.test(m[0])) return true;
   return false;
 }
