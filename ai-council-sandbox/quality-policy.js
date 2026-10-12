@@ -40,8 +40,8 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
       const note = /\b(?:handwritten )?thank[- ]you notes?|handwritten notes?\b/i.exec(sentence);
       if (note && hasActionVerb(sentence) && !isNegatedBefore(sentence, note.index)) violations.push("user-prohibited thank-you-note tactic");
     }
-    if (userBans(userQuestion, /\b(?:referral requests?|referral prompts?|asking for referrals?|ask customers to refer)\b/i)) {
-      const referral = /\b(?:ask|encourage|remind|request|prompt)\b.{0,100}\b(?:refer(?:ral)?|recommend you|send you customers|tell friends)\b|\b(?:referral prompts?|referral requests?)\b/i.exec(sentence);
+    if (userBans(userQuestion, /\b(?:referral requests?(?:\/prompts?)?|referral prompts?|asking for referrals?|ask customers to refer)\b/i)) {
+      const referral = /\b(?:ask|encourage|remind|request|prompt)\b.{0,140}\b(?:refer(?:ral)?|recommend you|recommend your business|send you customers|tell (?:their |your )?friends|friends or family|name a friend|name someone who might need)\b|\b(?:referral prompts?|referral requests?)\b/i.exec(sentence);
       if (referral && !isNegatedBefore(sentence, referral.index)) violations.push("user-prohibited referral solicitation tactic");
     }
     const duration = /\b(?:a short period|short period|one month|a month|two weeks|three weeks|four weeks|30 days|next week|next month|within \d+ days|for \d+ weeks|over the next month|over the next few weeks)\b/i.exec(sentence);
