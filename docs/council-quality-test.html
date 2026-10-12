@@ -34,7 +34,7 @@ function findTestPolicyViolations(agents){
  const checks=[
   ["paid advertising",/\b(?:recommend|suggest|run|buy|use|pay for|boost|invest in)\b.{0,100}\b(?:paid ads?|paid advertising|paid promotions?|boosted posts?)\b/i],
   ["discount or coupon",/\b(?:recommend|suggest|offer|give|use|try)\b.{0,80}\b(?:discounts?|coupons?|promotional pricing|special offers?)\b/i],
-  ["free service",/\b(?:recommend|suggest|offer|give|provide|perform)\b.{0,80}\bfree(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:services?|samples?|demos?|details?|consultations?|inspections?|assessments?|wash(?:es)?)\b/i],
+  ["free service or event",/\b(?:recommend|suggest|offer|give|provide|perform|host|run|invite|organize|organise)\b.{0,100}\bfree(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|informational|community|online|introductory|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:services?|samples?|demos?|details?|consultations?|inspections?|assessments?|wash(?:es)?|workshops?|sessions?|events?|q&as?|question-and-answer sessions?)\b/i],
   ["giveaway",/\b(?:recommend|suggest|run|offer|host|launch)\b.{0,80}\bgiveaways?\b/i],
   ["free content for promotion",/\bfree (?:photos?|pictures?|content|videos?|deliverables?)\b.{0,160}\b(?:in exchange for|in return for|for promotion|for exposure)\b/i],
   ["referral reward",/\b(?:recommend|suggest|offer|give|provide|use)\b.{0,80}\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
@@ -47,7 +47,7 @@ function findTestPolicyViolations(agents){
   for(const agent of agents){
    const response=String(agent.response||"");
    const mentionsGBP=/\bgoogle business profile\b|\bg-business profile\b/i.test(response);
-   const mentionsPhysicalEligibility=/\b(?:physical (?:address|location|presence)|storefront|in-person (?:business|service)|business licensing rules|local address)\b/i.test(response);
+   const mentionsPhysicalEligibility=/\b(?:physical (?:address|location|presence)|storefront|in-person (?:business(?:es)?|service(?:s)?)|business licensing rules|local address)\b/i.test(response);
    const includesServiceAreaNuance=/\b(?:service[- ]area business(?:es)?|service area|travels? to customers|visits? customers|mobile detailing|mobile business)\b/i.test(response);
    if(mentionsGBP&&!includesServiceAreaNuance)findings.push(agent.name+": Google Business Profile advice omits service-area business nuance");
   }
