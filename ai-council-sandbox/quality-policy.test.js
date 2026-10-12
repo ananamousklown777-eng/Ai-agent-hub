@@ -51,3 +51,12 @@ test("accepts Google Business Profile advice that includes service-area business
 });
 
 test("flags a free inspection offered as a lead-generation service", () => assert.ok(findBusinessPolicyViolations("Invite potential customers for a quick, free inspection.", question).some(x => x.includes("free services"))));
+
+
+test("flags free informational sessions and workshops under strict no-free-offers rule", () => {
+  assert.ok(findBusinessPolicyViolations("Host a free informational session at a local community center.", question).some(x => x.includes("free services")));
+  assert.ok(findBusinessPolicyViolations("Offer a free workshop to attract new customers.", question).some(x => x.includes("free services")));
+});
+test("requires service-area eligibility nuance whenever Google Business Profile is recommended", () => {
+  assert.ok(findBusinessPolicyViolations("Set up a Google Business Profile and check eligibility for in-person businesses.").some(x => x.includes("service-area business nuance")));
+});
