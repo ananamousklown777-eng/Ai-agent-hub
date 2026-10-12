@@ -39,6 +39,12 @@ test("flags word-of-mouth recommendations when referral-related actions are forb
 test("flags Google Business Profile advice that mentions physical eligibility without service-area nuance", () => {
   assert.ok(findBusinessPolicyViolations("Check Google Business Profile eligibility and physical presence requirements.").some(x => x.includes("service-area business nuance")));
 });
+test("flags in-person business wording that omits service-area nuance", () => {
+  assert.ok(findBusinessPolicyViolations("Verify eligibility for a Google Business Profile for an in-person business.").some(x => x.includes("service-area business nuance")));
+});
+test("flags local-address eligibility wording without service-area nuance", () => {
+  assert.ok(findBusinessPolicyViolations("Check the Google Business Profile rules and confirm the local address requirement.").some(x => x.includes("service-area business nuance")));
+});
 test("accepts Google Business Profile advice that includes service-area businesses", () => {
   assert.deepEqual(findBusinessPolicyViolations("Check Google Business Profile eligibility. Eligible service-area businesses that travel to customers may qualify under Google's rules."), []);
 });
