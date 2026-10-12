@@ -35,3 +35,10 @@ test("flags tracking referrals when referral activity is forbidden", () => asser
 test("flags non-handwritten thank-you notes when thank-you notes are forbidden", () => assert.ok(findBusinessPolicyViolations("Send a brief thank-you note after each job.", "Do not recommend thank-you notes or referral requests/prompts.").some(x => x.includes("thank-you-note"))));
 
 test("flags word-of-mouth recommendations when referral-related actions are forbidden", () => assert.ok(findBusinessPolicyViolations("Leverage word-of-mouth through customer interaction.", question).some(x => x.includes("referral-related"))));
+
+test("flags Google Business Profile advice that mentions physical eligibility without service-area nuance", () => {
+  assert.ok(findBusinessPolicyViolations("Check Google Business Profile eligibility and physical presence requirements.").some(x => x.includes("service-area business nuance")));
+});
+test("accepts Google Business Profile advice that includes service-area businesses", () => {
+  assert.deepEqual(findBusinessPolicyViolations("Check Google Business Profile eligibility. Eligible service-area businesses that travel to customers may qualify under Google's rules."), []);
+});
