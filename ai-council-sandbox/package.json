@@ -5,8 +5,11 @@
   "description": "Isolated three-agent internet research sandbox",
   "type": "module",
   "scripts": {
-    "start": "node council-api.js",
-    "council": "node council-runner.js"
+    "start": "node --test quality-policy.test.js && node council-api.js",
+    "council": "node council-runner.js",
+    "test": "node --test quality-policy.test.js"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
