@@ -24,3 +24,6 @@ test("flags unsupported fixed timelines", () => assert.ok(findBusinessPolicyViol
 
 test("flags asking customers to name friends who may need the service", () => assert.ok(findBusinessPolicyViolations("Ask each satisfied client to name a friend or family member who might need detailing.", question).some(x => x.includes("referral solicitation"))));
 test("flags asking customers to recommend the business to friends", () => assert.ok(findBusinessPolicyViolations("Ask each satisfied customer to recommend you to friends or family.", question).some(x => x.includes("referral solicitation"))));
+
+test("flags tracking referrals when referral activity is forbidden", () => assert.ok(findBusinessPolicyViolations("Track how many emails lead to repeat bookings or referrals.", question).some(x => x.includes("referral-related"))));
+test("flags non-handwritten thank-you notes when thank-you notes are forbidden", () => assert.ok(findBusinessPolicyViolations("Send a brief thank-you note after each job.", "Do not recommend thank-you notes or referral requests/prompts.").some(x => x.includes("thank-you-note"))));
