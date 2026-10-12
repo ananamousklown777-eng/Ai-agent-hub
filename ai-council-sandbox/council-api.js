@@ -1,6 +1,7 @@
 import http from "node:http";
 import { lookup } from "node:dns/promises";
 import net from "node:net";
+import { findBusinessPolicyViolations, findAgentFormatViolations } from "./quality-policy.js";
 
 const PORT = Number(process.env.PORT || 3000);
 const API_KEY = process.env.GROQ_API_KEY;
@@ -96,58 +97,6 @@ async function ask(system, user, maxTokens = 1000) {
   } finally { clearTimeout(timer); }
 }
 
-function findBusinessPolicyViolations(text, userQuestion = "") {
-  const violations = [];
-  const sentences = String(text).split(/(?<=[.!?;])\s+|\n+/);
-  const promoTerms = /\b(?:flyers?|paid ads?|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|cross-posting|flyer partnerships?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i;
-  const positiveAdvice = /\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through)\b/i;
-  const negation = /\b(?:do not|don't|never|avoid|without|not recommend|shouldn't|should not|rather than|instead of|exclude|skip|don't use|do not use|unless the user explicitly asks)\b/i;
-  const duration = /\b(?:a short period|short period|one month|a month|two weeks|three weeks|four weeks|30 days|next week|next month|within \d+ days|for \d+ weeks|over the next month|over the next few weeks)\b/i;
-  const reviewSolicitation = /\b(?:ask|tell|encourage|have|get|request)\b.{0,100}\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:reviews?|ratings?)\b|\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:leave|post|write)\b.{0,50}\b(?:reviews?|ratings?)\b/i;
-  const reviewReward = /\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b.{0,60}\b(?:reviews?|ratings?)\b|\b(?:reviews?|ratings?)\b.{0,60}\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b/i;
-  const freeWorkForTestimonial = /\b(?:free (?:demo|service|detail(?:ing)?|sample)|detail(?:ing)? (?:a|their|the) car for free)\b.{0,160}\b(?:in exchange for|for a|to get|to receive)\b.{0,50}\btestimonials?\b|\btestimonials?\b.{0,100}\b(?:in exchange for|in return for)\b.{0,50}\bfree\b/i;
-  const userExplicitlyAskedToEvaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
-  for (const sentence of sentences) {
-    if (promoTerms.test(sentence) && positiveAdvice.test(sentence) && !negation.test(sentence) && !userExplicitlyAskedToEvaluatePromotion) violations.push("unsupported promotional tactic in sentence: " + sentence.trim().replace(/\s+/g, " ").slice(0, 220));
-    const durationMatch = sentence.match(duration);
-    if (durationMatch && !negation.test(sentence) && !userQuestion.toLowerCase().includes(durationMatch[0].toLowerCase())) violations.push("unsupported fixed timeframe");
-    if (reviewSolicitation.test(sentence) && !negation.test(sentence)) violations.push("review solicitation from non-customers");
-    if (reviewReward.test(sentence) && !negation.test(sentence)) violations.push("incentivized reviews");
-    if (freeWorkForTestimonial.test(sentence) && !userExplicitlyAskedToEvaluatePromotion) violations.push("free work offered in exchange for a testimonial");
-  }
-  // Catch invented numeric weekly outcomes while allowing numbers explicitly supplied by the user.
-  const numericTarget = /\b(?:reach|target|achieve|secure|convert|generate|obtain|book|close|collect|get|aim for|at least)\s+(?:about\s+|around\s+)?(\d+)\s+(?:new\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\b|\b(\d+)\s+(?:new\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\s+(?:in|by|during|per)\s+(?:week|day|month)\b/ig;
-  for (const match of String(text).matchAll(numericTarget)) {
-    const n = match[1] || match[2];
-    if (n && !new RegExp("\\b" + n + "\\b").test(userQuestion)) {
-      violations.push("unsupported numeric business target");
-      break;
-    }
-  }
-  return [...new Set(violations)];
-}
-function findAgentFormatViolations(text, agentId) {
-  const violations = [];
-  if (agentId === "delta") {
-    const numberedFindings = [...String(text).matchAll(/^\s*\d+[.)]\s+/gm)].length;
-    if (numberedFindings !== 3) violations.push("Delta must provide exactly three numbered findings");
-    if (!/\b(?:correction|corrected|correct|replace|revise|instead|remove|change|check|verify|measure|track|confirm|avoid|use|recommend|set|calculate|compare|limit|clarify|separate|record|test|ask|identify|require|state|explain)\b/i.test(text)) {
-      violations.push("critique does not provide concrete corrections");
-    }
-  }
-  if (agentId === "sol") {
-    const required = ["Best recommendation", "Three concrete actions", "Main risk", "What we still don't know", "How to measure success"];
-    for (const heading of required) {
-      if (!new RegExp("^\\s*#{0,6}\\s*(?:\\*\\*)?" + heading + "(?:\\*\\*)?\\s*$", "im").test(text)) {
-        violations.push("missing Sol heading: " + heading);
-      }
-    }
-    const actionSection = String(text).match(/(?:^|\n)\s*#{0,6}\s*(?:\*\*)?Three concrete actions(?:\*\*)?\s*\n([\s\S]*?)(?=\n\s*#{0,6}\s*(?:\*\*)?(?:Main risk|What we still don't know|How to measure success)(?:\*\*)?\s*\n|$)/i);
-    const numbered = actionSection ? [...actionSection[1].matchAll(/^\s*\d+[.)]\s+/gm)].length : 0;
-    if (numbered !== 3) violations.push("Sol must provide exactly three numbered actions");
-  }
-  return violations;
-}
 async function askBusinessSafe(system, user, agentId = "") {
   // gpt-oss is a reasoning model: completion tokens also cover internal reasoning,
   // so small caps can truncate even short visible answers.
