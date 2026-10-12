@@ -3,7 +3,7 @@ function isNegatedBefore(text, index) {
   return /\b(?:do not|don't|never|avoid|not recommend|shouldn't|should not|without|skip|exclude|forbid|prohibit)\b[^.!?;]{0,85}$/i.test(prefix);
 }
 function hasActionVerb(sentence) {
-  return /\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through|implement|encourage|ask|request|remind|include|provide|perform)\b/i.test(sentence);
+  return /\b(?:recommend|suggest|try|use|print|hand out|buy|run|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through|implement|encourage|ask|request|remind|include|provide|perform|send|write|track|measure|record|count|monitor|log)\b/i.test(sentence);
 }
 function userBans(userQuestion, pattern) {
   const ban = /\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,500}/ig;
