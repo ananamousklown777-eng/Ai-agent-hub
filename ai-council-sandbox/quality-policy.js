@@ -16,7 +16,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
   const source = String(text ?? "");
   const sentences = source.split(/(?<=[.!?;])\s+|\n+/);
   const mentionsGBP = /\bgoogle business profile\b|\bg-business profile\b/i.test(source);
-  const mentionsPhysicalEligibility = /\b(?:physical (?:address|location|presence)|storefront|in-person business qualifies|business licensing rules)\b/i.test(source);
+  const mentionsPhysicalEligibility = /\b(?:physical (?:address|location|presence)|storefront|in-person (?:business|service)|business licensing rules|local address)\b/i.test(source);
   const includesServiceAreaNuance = /\b(?:service[- ]area business(?:es)?|service area|travels? to customers|visits? customers|mobile detailing|mobile business)\b/i.test(source);
   if (mentionsGBP && mentionsPhysicalEligibility && !includesServiceAreaNuance) {
     violations.push("Google Business Profile eligibility omits service-area business nuance");
