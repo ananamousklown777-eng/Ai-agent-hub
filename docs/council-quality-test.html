@@ -17,7 +17,7 @@
 <section class="panel">
 <label for="access">Council access key</label>
 <input id="access" type="password" autocomplete="off" placeholder="Enter your COUNCIL_ACCESS_KEY">
-<p class="note small">The key is used only for this request. This page does not save it. The saved prompt asks for free marketing steps and explicitly prohibits freebies, discounts, giveaways, referral rewards, invented numbers, and invented timelines.</p>
+<p class="note small">The key is used only for this request. This page does not save it. The saved prompt asks for free marketing steps and prohibits freebies, discounts, giveaways, referral rewards, referral requests, handwritten thank-you notes, invented numbers, and invented timelines.</p>
 <button class="primary" id="run">Run saved quality test</button>
 <div id="status" class="status" role="status" aria-live="polite"></div>
 </section>
@@ -39,7 +39,7 @@ function findTestPolicyViolations(agents){
   ["free content for promotion",/\bfree (?:photos?|pictures?|content|videos?|deliverables?)\b.{0,160}\b(?:in exchange for|in return for|for promotion|for exposure)\b/i],
   ["referral reward",/\b(?:recommend|suggest|offer|give|provide|use)\b.{0,80}\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
   ["thank-you note",/\b(?:implement|write|hand|give|send|include|use|recommend|suggest)\b.{0,80}\b(?:handwritten )?thank[- ]you notes?\b/i],
-  ["referral prompt",/\b(?:ask|encourage|remind|request|prompt)\b.{0,100}\b(?:customers? to )?(?:refer|recommend you|tell friends|send you customers)\b/i]
+  ["referral prompt",/\b(?:ask|encourage|remind|request|prompt)\b.{0,140}\b(?:refer|recommend you|recommend your business|tell (?:their |your )?friends|friends or family|name a friend|name someone who might need|send you customers)\b/i]
  ];
  for(const [label,pattern] of checks){if(pattern.test(actionable))findings.push(label);}
  return [...new Set(findings)];
