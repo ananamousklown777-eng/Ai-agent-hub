@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10151f">
+<title>AI Council · Repeatable Quality Test</title>
+<style>
+:root{color-scheme:dark;--bg:#10151f;--panel:#171f2c;--line:#344154;--text:#eef3fa;--muted:#b2bfd0;--accent:#b8d8ff;--accentText:#101722}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1b2b3d 0,var(--bg) 58%);color:var(--text);font:16px/1.5 system-ui,-apple-system,sans-serif}.wrap{max-width:900px;margin:auto;padding:24px 15px 48px}.pill{display:inline-block;border:1px solid #40506a;border-radius:99px;padding:5px 9px;color:var(--muted);font-size:12px}h1{font-size:clamp(28px,6vw,42px);line-height:1.1;margin:18px 0 10px}.muted,.note{color:var(--muted)}.panel,.agent{border:1px solid var(--line);border-radius:15px;padding:16px;background:rgba(23,31,44,.94);margin-top:15px}label{display:block;font-weight:700;margin:10px 0 6px}input{width:100%;min-height:46px;border:1px solid #4a5a70;border-radius:10px;background:#0d131d;color:var(--text);padding:11px 12px;font:inherit}.primary{width:100%;border:0;border-radius:11px;padding:14px 16px;background:var(--accent);color:var(--accentText);font:inherit;font-weight:800;margin-top:15px}.primary:disabled{opacity:.55}.status{white-space:pre-wrap;margin-top:13px;color:var(--muted)}.agent h2{font-size:18px;margin:0 0 9px}.body{white-space:pre-wrap;overflow-wrap:anywhere}.agent.flagged{border-color:#a66b56}.agent.sol{border-color:#7997bd}a{color:var(--accent)}.small{font-size:13px}
+</style>
+</head>
+<body><main class="wrap">
+<span class="pill">AI Agent Hub · repeatable test</span>
+<h1>Car-detailing business quality test</h1>
+<p class="muted">Runs the saved test prompt against the live Council API. No need to copy and paste the scenario each time.</p>
+<section class="panel">
+<label for="access">Council access key</label>
+<input id="access" type="password" autocomplete="off" placeholder="Enter your COUNCIL_ACCESS_KEY">
+<p class="note small">The key is used only for this request. This page does not save it. The saved prompt asks for free marketing steps and explicitly prohibits freebies, discounts, giveaways, referral rewards, invented numbers, and invented timelines.</p>
+<button class="primary" id="run">Run saved quality test</button>
+<div id="status" class="status" role="status" aria-live="polite"></div>
+</section>
+<section id="results" aria-live="polite"></section>
+<p class="note small"><a href="business-assistant.html">Back to Business Assistant</a></p>
+<script>
+const endpoint="https://freemind-counsil.onrender.com/council";
+const promptText = "I run a small car-detailing business and have no advertising budget. I need to attract more paying customers using free tools only. Recommend three practical first steps. Do not suggest free car details, free services, giveaways, discounts, paid advertising, free photos in exchange for promotion, or referral rewards. Do not invent prices, results, conversion rates, or timelines. Separate facts from assumptions, identify risks, and explain how I can measure which actions bring in paying customers.\n\nRules: Use supplied facts and separate facts, assumptions, and unknowns. Never invent prices, costs, margins, demand, statistics, conversion rates, numeric weekly targets, or timelines. Do not assume a website, social account, customer list, storefront, or Google Business Profile eligibility. Suggest a profile only if an in-person business may qualify, and say to verify eligibility. Reviews must be voluntary and honest from genuine customers only, with no reward or pressure; never ask non-customers. Do not suggest discounts, paid promotions, free services/samples/demos, giveaways, commissions, referral rewards, or cross-promotions. Prefer reversible no-cost steps when costs or margins are unknown. No tables; ordinary Markdown. Delta must give a correction for each key weakness. Sol must use the five required headings and exactly three numbered actions.";
+const $=id=>document.getElementById(id);
+$("run").addEventListener("click",async()=>{
+ const key=$("access").value.trim();
+ if(!key){$("status").textContent="Enter the Council access key first.";return;}
+ $("run").disabled=true;$("results").replaceChildren();
+ $("status").textContent="Running the saved test. The free service may take a minute to wake up.";
+ try{
+  const response=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json","x-council-key":key},body:JSON.stringify({question:promptText})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||("Request failed with HTTP "+response.status));
+  const agents=Array.isArray(data.agents)?data.agents:[];
+  const warnings=Array.isArray(data.quality_warnings)?data.quality_warnings:[];
+  const missing=Array.isArray(data.missing_agents)?data.missing_agents:[];
+  $("status").textContent=(data.complete===false?"TEST RESULT: INCOMPLETE. ":"Council reported complete responses. ")+(missing.length?"Missing agents: "+missing.join(", ")+". ":"")+(warnings.length?"Quality check flagged: "+warnings.join(", ")+". ":"")+(warnings.length||missing.length?"Do not treat this run as passed.":"Review the three responses below; this page does not automatically certify advice as safe.");
+  const order=["Sol","Quinn","Delta"];agents.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
+  for(const agent of agents){
+   const card=document.createElement("article");card.className="agent"+(agent.quality_flagged?" flagged":"")+(agent.name==="Sol"?" sol":"");
+   const h=document.createElement("h2");h.textContent=agent.name+(agent.quality_flagged?" · quality flagged":"");
+   const body=document.createElement("div");body.className="body";body.textContent=agent.response||"(No response text returned.)";
+   card.append(h,body);$("results").append(card);
+  }
+  if(!agents.length)$("status").textContent="The server responded but returned no agent responses.";
+ }catch(e){$("status").textContent="Test could not complete: "+e.message;}
+ finally{$("run").disabled=false;}
+});
+</script>
+</main></body></html>
