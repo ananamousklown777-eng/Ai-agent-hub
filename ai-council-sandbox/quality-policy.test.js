@@ -5,6 +5,7 @@ import { findBusinessPolicyViolations, findAgentFormatViolations } from "./quali
 const question = "Use free tools only. Do not suggest discounts, paid advertising, free services, giveaways, free photos in exchange for promotion, referral rewards, handwritten thank-you notes, or referral requests/prompts.";
 
 test("flags recommended discounts", () => assert.ok(findBusinessPolicyViolations("Offer a discount to new customers.", question).some(x => x.includes("discounts"))));
+test("flags coupons as prohibited discounts", () => assert.ok(findBusinessPolicyViolations("Offer a first-time service coupon.", question).some(x => x.includes("discounts"))));
 test("flags free services", () => assert.ok(findBusinessPolicyViolations("Give a free detail to the first customers.", question).some(x => x.includes("free services"))));
 test("flags free demos with descriptive words and punctuation", () => assert.ok(findBusinessPolicyViolations("Offer a free, short “demo” of a quick exterior wash to passersby.", question).some(x => x.includes("free services"))));
 test("flags a free quick wash as a prohibited free service", () => assert.ok(findBusinessPolicyViolations("Offer a free quick exterior wash at a local event.", question).some(x => x.includes("free services"))));
