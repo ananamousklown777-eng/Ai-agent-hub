@@ -27,3 +27,5 @@ test("flags asking customers to recommend the business to friends", () => assert
 
 test("flags tracking referrals when referral activity is forbidden", () => assert.ok(findBusinessPolicyViolations("Track how many emails lead to repeat bookings or referrals.", question).some(x => x.includes("referral-related"))));
 test("flags non-handwritten thank-you notes when thank-you notes are forbidden", () => assert.ok(findBusinessPolicyViolations("Send a brief thank-you note after each job.", "Do not recommend thank-you notes or referral requests/prompts.").some(x => x.includes("thank-you-note"))));
+
+test("flags word-of-mouth recommendations when referral-related actions are forbidden", () => assert.ok(findBusinessPolicyViolations("Leverage word-of-mouth through customer interaction.", question).some(x => x.includes("referral-related"))));
