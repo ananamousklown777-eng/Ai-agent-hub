@@ -34,7 +34,7 @@ function findTestPolicyViolations(agents){
  const checks=[
   ["paid advertising",/\b(?:recommend|suggest|run|buy|use|pay for|boost|invest in)\b.{0,100}\b(?:paid ads?|paid advertising|paid promotions?|boosted posts?)\b/i],
   ["discount",/\b(?:recommend|suggest|offer|give|use|try)\b.{0,80}\bdiscounts?\b/i],
-  ["free service",/\b(?:recommend|suggest|offer|give|provide|perform)\b.{0,80}\bfree(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:services?|samples?|demos?|details?|consultations?|washes?)\b/i],
+  ["free service",/\b(?:recommend|suggest|offer|give|provide|perform)\b.{0,80}\bfree(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:services?|samples?|demos?|details?|consultations?|wash(?:es)?)\b/i],
   ["giveaway",/\b(?:recommend|suggest|run|offer|host|launch)\b.{0,80}\bgiveaways?\b/i],
   ["free content for promotion",/\bfree (?:photos?|pictures?|content|videos?|deliverables?)\b.{0,160}\b(?:in exchange for|in return for|for promotion|for exposure)\b/i],
   ["referral reward",/\b(?:recommend|suggest|offer|give|provide|use)\b.{0,80}\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
