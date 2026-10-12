@@ -18,7 +18,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
   const mentionsGBP = /\bgoogle business profile\b|\bg-business profile\b/i.test(source);
   const mentionsPhysicalEligibility = /\b(?:physical (?:address|location|presence)|storefront|in-person (?:business|service)|business licensing rules|local address)\b/i.test(source);
   const includesServiceAreaNuance = /\b(?:service[- ]area business(?:es)?|service area|travels? to customers|visits? customers|mobile detailing|mobile business)\b/i.test(source);
-  if (mentionsGBP && mentionsPhysicalEligibility && !includesServiceAreaNuance) {
+  if (mentionsGBP && !includesServiceAreaNuance) {
     violations.push("Google Business Profile eligibility omits service-area business nuance");
   }
   const tactics = [
@@ -29,7 +29,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     ["cross-promotions", /\b(?:cross-promotions?|cross-posting|flyer partnerships?)\b/i],
     ["free services or samples", /\b(?:free(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b){0,3}[\s,.:;()\u0022\u0027“”\-–—]*(?:car )?(?:details?|services?|samples?|demos?|consultations?|inspections?|assessments?|wash(?:es)?)|complimentary services?)\b/i]
   ];
-  const evaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid advertising|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|coupons?|promotional pricing|special offers?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free inspections?|free assessments?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
+  const evaluatePromotion = /\b(?:should i|is it worth|evaluate (?:the option of|whether|using|running|offering|printing|paying for)?|compare (?:the costs|the pros and cons|options for)?|assess whether|analy[sz]e whether|would it make sense to)\b.{0,120}\b(?:flyers?|paid ads?|paid advertising|paid promotions?|paid boosts?|boosted posts?|cross-promotions?|discounts?|coupons?|promotional pricing|special offers?|referral rewards?|commissions?|giveaways?|free sample services?|free demos?|free consultations?|free inspections?|free assessments?|free workshops?|free informational sessions?|free sessions?|free events?|free q&as?|free (?:first[- ]time )?(?:car )?details?|complimentary services?|free services?|local SEO packages?|SEO agencies?)\b/i.test(userQuestion);
   for (const sentence of sentences) {
     for (const [label, pattern] of tactics) {
       const match = pattern.exec(sentence);
