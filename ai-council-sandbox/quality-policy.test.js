@@ -49,3 +49,5 @@ test("flags local-address eligibility wording without service-area nuance", () =
 test("accepts Google Business Profile advice that includes service-area businesses", () => {
   assert.deepEqual(findBusinessPolicyViolations("Check Google Business Profile eligibility. Eligible service-area businesses that travel to customers may qualify under Google's rules."), []);
 });
+
+test("flags a free inspection offered as a lead-generation service", () => assert.ok(findBusinessPolicyViolations("Invite potential customers for a quick, free inspection.", question).some(x => x.includes("free services"))));
