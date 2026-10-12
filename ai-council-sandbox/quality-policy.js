@@ -44,6 +44,10 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
       const referral = /\b(?:ask|encourage|remind|request|prompt)\b.{0,140}\b(?:refer(?:ral)?|recommend you|recommend your business|send you customers|tell (?:their |your )?friends|friends or family|name a friend|name someone who might need)\b|\b(?:referral prompts?|referral requests?)\b/i.exec(sentence);
       if (referral && !isNegatedBefore(sentence, referral.index)) violations.push("user-prohibited referral solicitation tactic");
     }
+    if (userBans(userQuestion, /\b(?:referrals?|referral-related actions?|referral requests?(?:\/prompts?)?)\b/i)) {
+      const referralActivity = /\breferrals?\b/i.exec(sentence);
+      if (referralActivity && hasActionVerb(sentence) && !isNegatedBefore(sentence, referralActivity.index)) violations.push("user-prohibited referral-related recommendation or tracking");
+    }
     const duration = /\b(?:a short period|short period|one month|a month|two weeks|three weeks|four weeks|30 days|next week|next month|within \d+ days|for \d+ weeks|over the next month|over the next few weeks)\b/i.exec(sentence);
     if (duration && !isNegatedBefore(sentence, duration.index) && !String(userQuestion).toLowerCase().includes(duration[0].toLowerCase())) violations.push("unsupported fixed timeframe");
     const reviewSolicitation = /\b(?:ask|tell|encourage|have|get|request)\b.{0,100}\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:reviews?|ratings?)\b|\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:leave|post|write)\b.{0,50}\b(?:reviews?|ratings?)\b/i.exec(sentence);
