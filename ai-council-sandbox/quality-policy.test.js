@@ -6,6 +6,9 @@ const question = "Use free tools only. Do not suggest discounts, paid advertisin
 
 test("flags recommended discounts", () => assert.ok(findBusinessPolicyViolations("Offer a discount to new customers.", question).some(x => x.includes("discounts"))));
 test("flags free services", () => assert.ok(findBusinessPolicyViolations("Give a free detail to the first customers.", question).some(x => x.includes("free services"))));
+test("flags free demos with descriptive words and punctuation", () => assert.ok(findBusinessPolicyViolations("Offer a free, short “demo” of a quick exterior wash to passersby.", question).some(x => x.includes("free services"))));
+test("flags a free quick wash as a prohibited free service", () => assert.ok(findBusinessPolicyViolations("Offer a free quick exterior wash at a local event.", question).some(x => x.includes("free services"))));
+test("does not flag a clearly prohibited free demo when stated as a warning", () => assert.deepEqual(findBusinessPolicyViolations("Do not offer a free, short “demo” of a quick exterior wash.", question), []));
 test("flags free photos offered for promotion", () => assert.ok(findBusinessPolicyViolations("Provide free photos to influencers in exchange for promotion.", question).some(x => x.includes("free content"))));
 test("flags handwritten thank-you notes when forbidden", () => assert.ok(findBusinessPolicyViolations("Implement a handwritten thank-you note after each job.", question).some(x => x.includes("thank-you-note"))));
 test("flags referral prompts when forbidden", () => assert.ok(findBusinessPolicyViolations("Remind customers to recommend you to their friends.", question).some(x => x.includes("referral solicitation"))));
