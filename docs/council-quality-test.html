@@ -40,7 +40,7 @@ function findTestPolicyViolations(agents){
   ["referral reward",/\b(?:recommend|suggest|offer|give|provide|use)\b.{0,80}\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
   ["thank-you note",/\b(?:implement|write|hand|give|send|include|use|recommend|suggest)\b.{0,80}\b(?:handwritten )?thank[- ]you notes?\b/i],
   ["referral-related action",/\b(?:track|measure|record|count|monitor|log|encourage|ask|request|prompt|remind|recommend|suggest|include|leverage|build|generate)\b.{0,100}\b(?:referrals?|word[- ]of[- ]mouth)\b|\b(?:referrals?|word[- ]of[- ]mouth)\b.{0,80}\b(?:track|measure|record|count|monitor|log|leverage|build|generate)\b/i],
-  ["referral prompt",/\b(?:ask|encourage|remind|request|prompt)\b.{0,140}\b(?:refer|recommend you|recommend your business|tell (?:their |your )?friends|friends or family|name a friend|name someone who might need|send you customers)\b/i]
+  ["referral prompt",/\b(?:ask|encourage|remind|request|prompt)\b.{0,140}\b(?:refer|recommend you|recommend your business|tell (?:their |your )?friends|friends or family|name a friend|name someone who might need|send you customers)\b/i],
   ["unsupported recurring schedule",/\b(?:daily|weekly|monthly|quarterly|annually|every day|every week|each week|once a week|twice a week|every month|each month|once a month|every quarter|each quarter|every monday|every tuesday|every wednesday|every thursday|every friday|every saturday|every sunday|on mondays|on tuesdays|on wednesdays|on thursdays|on fridays|on saturdays|on sundays|within \d+ days|for \d+ weeks|over the next month|over the next few weeks)\b/i]
  ];
  for(const [label,pattern] of checks){if(pattern.test(actionable))findings.push(label);}
