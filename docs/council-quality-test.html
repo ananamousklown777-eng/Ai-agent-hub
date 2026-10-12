@@ -17,7 +17,7 @@
 <section class="panel">
 <label for="access">Council access key</label>
 <input id="access" type="password" autocomplete="off" placeholder="Enter your COUNCIL_ACCESS_KEY">
-<p class="note small">The key is used only for this request. This page does not save it. The saved prompt asks for free marketing steps and prohibits freebies, discounts, giveaways, referral rewards, referral requests, handwritten thank-you notes, invented numbers, and invented timelines.</p>
+<p class="note small">The key is used only for this request. This page does not save it. The saved prompt asks for free marketing steps and prohibits free services or demos, discounts, giveaways, referral rewards or requests, thank-you notes, invented numbers, and invented timelines.</p>
 <button class="primary" id="run">Run saved quality test</button>
 <div id="status" class="status" role="status" aria-live="polite"></div>
 </section>
@@ -34,7 +34,7 @@ function findTestPolicyViolations(agents){
  const checks=[
   ["paid advertising",/\b(?:recommend|suggest|run|buy|use|pay for|boost|invest in)\b.{0,100}\b(?:paid ads?|paid advertising|paid promotions?|boosted posts?)\b/i],
   ["discount",/\b(?:recommend|suggest|offer|give|use|try)\b.{0,80}\bdiscounts?\b/i],
-  ["free service",/\b(?:recommend|suggest|offer|give|provide|perform)\b.{0,80}\bfree (?:services?|samples?|demos?|details?|consultations?)\b/i],
+  ["free service",/\b(?:recommend|suggest|offer|give|provide|perform)\b.{0,80}\bfree(?:[\s,.:;()\u0022\u0027“”\-–—]+(?:(?:short|brief|quick|first[- ]time|small|mini|sample|exterior|interior|full|basic|car|vehicle)\b[\s,.:;()\u0022\u0027“”\-–—]*){0,3})(?:car )?(?:services?|samples?|demos?|details?|consultations?|washes?)\b/i],
   ["giveaway",/\b(?:recommend|suggest|run|offer|host|launch)\b.{0,80}\bgiveaways?\b/i],
   ["free content for promotion",/\bfree (?:photos?|pictures?|content|videos?|deliverables?)\b.{0,160}\b(?:in exchange for|in return for|for promotion|for exposure)\b/i],
   ["referral reward",/\b(?:recommend|suggest|offer|give|provide|use)\b.{0,80}\b(?:referral rewards?|referral incentives?|commissions?)\b/i],
