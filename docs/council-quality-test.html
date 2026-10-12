@@ -47,7 +47,7 @@ function findTestPolicyViolations(agents){
   for(const agent of agents){
    const response=String(agent.response||"");
    const mentionsGBP=/\bgoogle business profile\b|\bg-business profile\b/i.test(response);
-   const mentionsPhysicalEligibility=/\b(?:physical (?:address|location|presence)|storefront|in-person business qualifies|business licensing rules)\b/i.test(response);
+   const mentionsPhysicalEligibility=/\b(?:physical (?:address|location|presence)|storefront|in-person (?:business|service)|business licensing rules|local address)\b/i.test(response);
    const includesServiceAreaNuance=/\b(?:service[- ]area business(?:es)?|service area|travels? to customers|visits? customers|mobile detailing|mobile business)\b/i.test(response);
    if(mentionsGBP&&mentionsPhysicalEligibility&&!includesServiceAreaNuance)findings.push(agent.name+": Google Business Profile advice omits service-area business nuance");
   }
