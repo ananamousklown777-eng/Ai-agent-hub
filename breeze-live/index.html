@@ -26,7 +26,7 @@ header{text-align:center;padding:18px 0 22px}
 .input input{flex:1;min-width:0;padding:15px 16px;border-radius:12px;border:1px solid #ffffff18;background:#080d1c;color:#fff;outline:none;font-size:16px}
 .input input:focus{border-color:#8d84ff}
 .input button{padding:15px 20px;border:0;border-radius:12px;background:#756cff;color:#fff;font-weight:800;font-size:15px}
-.input button:disabled{opacity:.5}
+.input button:disabled{opacity:.5}\n#micButton{background:#1c9b8a;white-space:nowrap}#micButton.listening{background:#e53935;animation:micPulse 1s ease-in-out infinite alternate}@keyframes micPulse{from{box-shadow:0 0 0 0 #e5393566}to{box-shadow:0 0 0 7px #e5393500}}
 .room-note{margin-top:10px;font-size:11px;opacity:.5}.status{margin-top:12px;font-size:12px;opacity:.62;text-align:center}
 .live-avatar-video{display:none;width:100%;height:100%;object-fit:cover;border-radius:28px;position:absolute;inset:0;z-index:2;background:#080d1c}.avatar.live-mode img{display:none}.avatar.live-mode .live-avatar-video{display:block}.avatar.live-mode{box-shadow:0 20px 80px #000a,0 0 55px #9ee7ff88}
 footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
@@ -56,7 +56,7 @@ footer{text-align:center;margin-top:20px;font-size:12px;opacity:.45}
 </div>
 <div class="input">
 <input id="text" placeholder="Type a message…" autocomplete="off">
-<button id="send">Send</button>
+<button id="micButton" type="button" aria-label="Speak a message">🎙 Speak</button><button id="send">Send</button>
 </div>
 <div id="status" class="status">Checking the Breeze backend…</div>
 </section>
@@ -69,7 +69,7 @@ const input=document.getElementById("text");
 const messages=document.getElementById("messages");
 const status=document.getElementById("status");
 const connection=document.getElementById("connection");
-const sendButton=document.getElementById("send");
+const sendButton=document.getElementById("send");\nconst micButton=document.getElementById("micButton");\nconst SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;\nlet recognition=null;\nlet isListening=false;
 const viewerInput=document.getElementById("viewer");
 const simulateButton=document.getElementById("simulate");
 const roomLabel=document.getElementById("roomLabel");
@@ -387,7 +387,7 @@ async function simulateAudience(){
   }
 }
 
-startLiveAvatarButton.addEventListener("click",startLiveAvatar);
+function stopListening(){\n  if(recognition){try{recognition.stop();}catch{}}\n  isListening=false;\n  micButton.classList.remove("listening");\n  micButton.textContent="🎙 Speak";\n}\n\nfunction startListening(){\n  if(!SpeechRecognition){\n    status.textContent="Voice input is not supported in this browser. Try Chrome on Android.";\n    return;\n  }\n  if(isListening){stopListening();return;}\n  recognition=new SpeechRecognition();\n  recognition.lang="en-US";\n  recognition.interimResults=true;\n  recognition.continuous=false;\n  let finalText="";\n  recognition.onstart=()=>{\n    isListening=true;\n    micButton.classList.add("listening");\n    micButton.textContent="■ Stop";\n    status.textContent="Listening… speak now.";\n  };\n  recognition.onresult=(event)=>{\n    let interimText="";\n    for(let i=event.resultIndex;i<event.results.length;i++){\n      const transcript=event.results[i][0].transcript;\n      if(event.results[i].isFinal)finalText+=transcript;\n      else interimText+=transcript;\n    }\n    input.value=(finalText||interimText).trim();\n    if(finalText.trim())status.textContent="Voice captured. Tap Send to talk to Breeze.";\n  };\n  recognition.onerror=(event)=>{\n    status.textContent=event.error==="not-allowed"?"Microphone permission was denied. Allow microphone access in your browser settings.":"Voice input: "+event.error;\n    stopListening();\n  };\n  recognition.onend=()=>{\n    const hadText=!!input.value.trim();\n    stopListening();\n    if(hadText)status.textContent="Voice captured. Tap Send to talk to Breeze.";\n    else if(status.textContent==="Listening… speak now.")status.textContent="No speech detected. Tap Speak and try again.";\n  };\n  try{recognition.start();}catch(error){\n    status.textContent="Couldn't start microphone: "+(error?.message||"try again");\n    stopListening();\n  }\n}\n\nmicButton.addEventListener("click",startListening);\nstartLiveAvatarButton.addEventListener("click",startLiveAvatar);
 sendButton.addEventListener("click",send);
 simulateButton.addEventListener("click",simulateAudience);
 input.addEventListener("keydown",e=>{if(e.key==="Enter")send();});
