@@ -119,7 +119,7 @@
     } catch (error) {
       const message = error?.message || "Something went wrong.";
       status.textContent = /failed to fetch|networkerror|load failed/i.test(message)
-        ? "Could not connect to the Breeze server. It may be waking up or restarting. Check the service health here: https://breeze-web-agent.onrender.com/health . If that link also fails, the problem is the server connection, not the website you entered."
+        ? "Could not connect to the Big Shark server. It may be waking up or restarting. Check the service health here: https://breeze-web-agent.onrender.com/health . If that link also fails, the problem is the server connection, not the website you entered."
         : message;
     } finally {
       button.disabled = false;
