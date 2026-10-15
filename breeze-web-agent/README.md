@@ -5,7 +5,8 @@ Big Shark is an early, separate browser-automation MVP for AI Agent Hub. It uses
 ## Current scope
 
 - Browser-based page inspection through a simple web interface
-- JSON API: `POST /api/inspect`
+- JSON API: `POST /api/inspect` (one public webpage)
+- JSON API: `POST /api/workflow` (read-only research across up to three public webpages)
 - Health endpoint: `GET /health`
 - Basic request throttling and private-network URL blocking
 - No account system, billing, saved sessions, or customer credentials yet
@@ -13,7 +14,7 @@ Big Shark is an early, separate browser-automation MVP for AI Agent Hub. It uses
 ## API integration
 
 The API contract for clients that support OpenAPI is in `openapi.yaml`.
-It exposes the health check and the public-page inspection endpoint. This is
+It exposes the health check, single-page inspection, and multi-page research workflow. This is
 an integration contract, not an automatically installed ChatGPT plugin; a
 client must be configured to call this service.
 
@@ -25,7 +26,15 @@ curl -X POST https://breeze-web-agent.onrender.com/api/inspect \
   -d '{"url":"https://example.com"}'
 ```
 
-Screenshot capture is best-effort and must be verified on the target host.
+Multi-page workflow example:
+
+```bash
+curl -X POST https://breeze-web-agent.onrender.com/api/workflow \
+  -H "Content-Type: application/json" \
+  -d '{"urls":["https://example.com","https://www.wikipedia.org"]}'
+```
+
+The workflow is read-only: it does not click buttons, submit forms, sign in, or execute supplied code. It accepts at most three public URLs per request. Screenshot capture is best-effort and must be verified on the target host.
 The free Render instance can sleep between requests and has limited resources.
 Do not send private pages, credentials, or sensitive information.
 
