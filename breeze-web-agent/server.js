@@ -150,42 +150,49 @@ app.post("/api/inspect", async (req, res) => {
     // or never-ending font requests. CDP captures the already-rendered viewport directly.
     let screenshotDataUrl = null;
     let screenshotError = null;
-    let screenshotSession;
     const captureWithCdp = async quality => {
-      screenshotSession ??= await context.newCDPSession(page);
-      const capture = screenshotSession.send("Page.captureScreenshot", {
-        format: "jpeg",
-        quality,
-        fromSurface: true,
-        captureBeyondViewport: false
-      });
+      // Use a fresh CDP session per attempt. If a capture command stalls, do not
+      // reuse its possibly wedged protocol session for the fallback attempt.
+      const session = await context.newCDPSession(page);
       let timeoutId;
       try {
+        await session.send("Page.enable");
+        const capture = session.send("Page.captureScreenshot", {
+          format: "jpeg",
+          quality,
+          fromSurface: true,
+          captureBeyondViewport: false
+        });
         const response = await Promise.race([
           capture,
           new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error("Chromium screenshot capture timed out")), 8000);
+            timeoutId = setTimeout(() => reject(new Error("Chromium screenshot capture timed out after 8 seconds")), 8000);
           })
         ]);
         return response.data;
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
+        await session.detach().catch(() => {});
       }
     };
     try {
+      console.log("Big Shark screenshot attempt starting:", JSON.stringify({
+        url: page.url(),
+        viewport: page.viewportSize()
+      }));
       const screenshotBase64 = await captureWithCdp(40);
       screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
+      console.log("Big Shark screenshot captured successfully:", Math.round(screenshotBase64.length * 0.75), "bytes");
     } catch (firstError) {
-      console.warn("Big Shark direct screenshot failed; trying a lighter capture:", firstError?.message || firstError);
+      console.warn("Big Shark first screenshot attempt failed:", firstError?.stack || firstError);
       try {
         const screenshotBase64 = await captureWithCdp(25);
         screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
+        console.log("Big Shark fallback screenshot captured successfully:", Math.round(screenshotBase64.length * 0.75), "bytes");
       } catch (retryError) {
         screenshotError = "Screenshot unavailable after two direct capture attempts. Page text and links were still extracted.";
-        console.warn("Big Shark screenshot fallback failed:", retryError?.message || retryError);
+        console.warn("Big Shark second screenshot attempt failed:", retryError?.stack || retryError);
       }
-    } finally {
-      if (screenshotSession) await screenshotSession.detach().catch(() => {});
     }
     res.json({
       ok: true,
