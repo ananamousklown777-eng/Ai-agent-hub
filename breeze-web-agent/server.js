@@ -15,8 +15,9 @@ app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] })
 
 const windows = new Map();
 const dnsCache = new Map();
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_RUNS_PER_WINDOW = 5;
+const WINDOW_MS = Math.max(60_000, Number(process.env.BWA_RATE_WINDOW_MS) || 10 * 60 * 1000);
+// Keep a reasonable abuse guard while allowing more development testing.
+const MAX_RUNS_PER_WINDOW = Math.max(1, Math.min(30, Number(process.env.BWA_MAX_RUNS_PER_WINDOW) || 12));
 
 function isPrivateIPv4(ip) {
   const parts = ip.split(".").map(Number);
