@@ -289,7 +289,8 @@ app.post("/api/inspect", async (req, res) => {
       screenshotDataUrl = `data:image/jpeg;base64,${screenshotBuffer.toString("base64")}`;
       console.log("Big Shark isolated screenshot captured successfully:", screenshotBuffer.length, "bytes");
     } catch (screenshotFailure) {
-      screenshotError = "Screenshot unavailable. Text and links were collected, but isolated screenshot capture failed.";
+      const screenshotReason = String(screenshotFailure?.message || "unknown screenshot error").replace(/https?:\/\/\S+/g, "[website URL]").slice(0, 220);
+      screenshotError = `Screenshot unavailable: ${screenshotReason}. Text and links were collected, but screenshot capture failed.`;
       console.warn("Big Shark isolated screenshot capture failed:", screenshotFailure?.stack || screenshotFailure);
     } finally {
       if (screenshotPage) await screenshotPage.close().catch(() => {});
