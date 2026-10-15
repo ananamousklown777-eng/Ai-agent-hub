@@ -46,6 +46,23 @@
     <p class="small">For public pages only. Local/private network addresses are blocked. Do not enter passwords, private account pages, or sensitive information. Limited to twelve runs per IP per ten minutes by default in this prototype.</p>
     <p id="status" role="status" aria-live="polite"></p>
   </section>
+
+  <section class="panel">
+    <h2>Research several pages</h2>
+    <p class="small">Compare up to three public pages in one run. Big Shark reads pages and collects links; it does not sign in, click buttons, or submit forms.</p>
+    <form id="workflow-form">
+      <label for="workflow-url-1">Website 1</label>
+      <input id="workflow-url-1" type="url" placeholder="https://example.com" required maxlength="2048">
+      <label for="workflow-url-2" style="margin-top:12px">Website 2 (optional)</label>
+      <input id="workflow-url-2" type="url" placeholder="https://www.wikipedia.org" maxlength="2048">
+      <label for="workflow-url-3" style="margin-top:12px">Website 3 (optional)</label>
+      <input id="workflow-url-3" type="url" placeholder="https://another-example.com" maxlength="2048">
+      <div class="controls" style="margin-top:12px"><button id="workflow-submit" type="submit">Research pages</button></div>
+    </form>
+    <p id="workflow-status" role="status" aria-live="polite"></p>
+    <div id="workflow-results"></div>
+  </section>
+
   <section id="results" class="result" aria-live="polite">
     <div class="panel"><h2 id="page-title">Page title</h2><p id="page-description"></p><p class="small">Final URL: <a id="final-url" target="_blank" rel="noopener noreferrer"></a></p><h3>Page text</h3><pre id="page-text"></pre></div>
     <div class="panel"><h3>Links found</h3><ul id="links"></ul></div>
@@ -55,6 +72,79 @@
 </main>
 <script>
   const form = document.querySelector("#inspect-form");
+
+  const workflowForm = document.querySelector("#workflow-form");
+  const workflowButton = document.querySelector("#workflow-submit");
+  const workflowStatus = document.querySelector("#workflow-status");
+  const workflowResults = document.querySelector("#workflow-results");
+  workflowForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    workflowButton.disabled = true;
+    workflowStatus.textContent = "Researching public pages...";
+    workflowResults.replaceChildren();
+    const urls = [1, 2, 3].map(n => document.querySelector("#workflow-url-" + n).value.trim()).filter(Boolean);
+    try {
+      const response = await fetch("/api/workflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urls })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || "Research workflow failed.");
+      for (const item of data.results || []) {
+        const card = document.createElement("div");
+        card.className = "panel";
+        const heading = document.createElement("h3");
+        heading.textContent = item.ok ? (item.title || "(No page title)") : "Page could not be read";
+        card.appendChild(heading);
+        const url = document.createElement("p");
+        const link = document.createElement("a");
+        link.href = item.finalUrl || item.requestedUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = item.finalUrl || item.requestedUrl;
+        url.appendChild(link);
+        card.appendChild(url);
+        if (item.ok) {
+          const description = document.createElement("p");
+          description.textContent = item.description || "No meta description found.";
+          card.appendChild(description);
+          const textHeading = document.createElement("h4");
+          textHeading.textContent = "Readable text";
+          card.appendChild(textHeading);
+          const body = document.createElement("pre");
+          body.textContent = item.text || "(No readable text found)";
+          card.appendChild(body);
+          const linksHeading = document.createElement("h4");
+          linksHeading.textContent = "Useful links";
+          card.appendChild(linksHeading);
+          const list = document.createElement("ul");
+          for (const found of item.links || []) {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.href = found.url;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.textContent = found.text + " · " + found.url;
+            li.appendChild(a);
+            list.appendChild(li);
+          }
+          card.appendChild(list);
+        } else {
+          const error = document.createElement("p");
+          error.textContent = item.error || "This page timed out or blocked automated access.";
+          card.appendChild(error);
+        }
+        workflowResults.appendChild(card);
+      }
+      workflowStatus.textContent = "Finished. " + data.pageCount + " page(s) processed.";
+    } catch (error) {
+      workflowStatus.textContent = error?.message || "Could not connect to Big Shark. The free service may be waking up.";
+    } finally {
+      workflowButton.disabled = false;
+    }
+  });
+
   const button = document.querySelector("#submit");
   const status = document.querySelector("#status");
   const results = document.querySelector("#results");
