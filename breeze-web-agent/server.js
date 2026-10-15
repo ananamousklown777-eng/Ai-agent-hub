@@ -123,12 +123,16 @@ app.post("/api/workflow", async (req, res) => {
     const results = [];
     for (const target of validated) {
       const page = await context.newPage();
-      page.setDefaultNavigationTimeout(8000);
-      page.setDefaultTimeout(4000);
+      page.setDefaultNavigationTimeout(5000);
+      page.setDefaultTimeout(2500);
       await page.route("**/*", async route => {
         try {
-          const requestUrl = route.request().url();
+          const request = route.request();
+          const requestUrl = request.url();
           if (requestUrl.startsWith("data:") || requestUrl.startsWith("blob:") || requestUrl === "about:blank") return route.continue();
+          // Images, fonts, and media are not needed for text research. Skipping them
+          // reduces DNS checks and keeps the free instance focused on readable content.
+          if (["image", "font", "media"].includes(request.resourceType())) return route.abort();
           await assertPublicUrl(requestUrl);
           return route.continue();
         } catch {
@@ -136,8 +140,8 @@ app.post("/api/workflow", async (req, res) => {
         }
       });
       try {
-        await page.goto(target.href, { waitUntil: "domcontentloaded", timeout: 8000 });
-        await page.waitForTimeout(100);
+        await page.goto(target.href, { waitUntil: "domcontentloaded", timeout: 5000 });
+        await page.waitForTimeout(50);
         const data = await page.evaluate(() => ({
           title: document.title || "",
           description: document.querySelector('meta[name="description"]')?.content || "",
@@ -170,11 +174,18 @@ app.post("/api/workflow", async (req, res) => {
         });
         console.warn("Big Shark workflow page failed:", target.href, detail);
       } finally {
-        await page.close().catch(() => {});
+        // Page shutdown must not hold the whole multi-page request open.
+        await Promise.race([
+          page.close().catch(() => {}),
+          new Promise(resolve => setTimeout(resolve, 500))
+        ]);
       }
     }
-    // Send the completed research before browser cleanup. On small free instances,
-    // Chromium shutdown can stall and otherwise leave the browser waiting for a response.
+    // Return results before context/browser cleanup, which can stall on free hosting.
+    console.info("Big Shark workflow completed:", {
+      pageCount: results.length,
+      successfulPages: results.filter(item => item.ok).length
+    });
     res.json({
       ok: true,
       service: "big-shark",
