@@ -139,7 +139,10 @@
       }
       workflowStatus.textContent = "Finished. " + data.pageCount + " page(s) processed.";
     } catch (error) {
-      workflowStatus.textContent = error?.message || "Could not connect to Big Shark. The free service may be waking up.";
+      const message = error?.message || "Unknown network error.";
+      workflowStatus.textContent = /failed to fetch|networkerror|load failed/i.test(message)
+        ? "Big Shark did not return a response. The server may be waking up, restarting, or the research request may have taken too long. Check service health: https://breeze-web-agent.onrender.com/health"
+        : message;
     } finally {
       workflowButton.disabled = false;
     }
