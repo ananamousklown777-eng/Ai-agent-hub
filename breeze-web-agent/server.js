@@ -99,12 +99,14 @@ app.post("/api/inspect", async (req, res) => {
   }
 
   let browser;
+  let inspectionStage = "starting browser";
   try {
     browser = await playwright.launch({
       headless: true,
       args: chromium.args,
       executablePath: await chromium.executablePath()
     });
+    inspectionStage = "creating browser context";
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       serviceWorkers: "block",
@@ -114,6 +116,7 @@ app.post("/api/inspect", async (req, res) => {
     page.setDefaultNavigationTimeout(20000);
     page.setDefaultTimeout(5000);
 
+    inspectionStage = "validating page requests";
     // Re-check every navigation and subresource request to reduce private-network access risk.
     await page.route("**/*", async route => {
       try {
@@ -126,7 +129,9 @@ app.post("/api/inspect", async (req, res) => {
       }
     });
 
+    inspectionStage = "loading website";
     await page.goto(target.href, { waitUntil: "domcontentloaded", timeout: 20000 });
+    inspectionStage = "extracting page content";
     await page.waitForTimeout(700);
     const result = await page.evaluate(() => {
       const title = document.title || "";
@@ -138,6 +143,7 @@ app.post("/api/inspect", async (req, res) => {
         .slice(0, 40);
       return { title, description, text, links };
     });
+    inspectionStage = "capturing screenshot";
     const screenshot = await page.screenshot({ type: "jpeg", quality: 55, fullPage: false, timeout: 10000 });
     res.json({
       ok: true,
@@ -149,10 +155,11 @@ app.post("/api/inspect", async (req, res) => {
     });
     await context.close();
   } catch (error) {
-    console.error("Breeze Web Agent inspection failed:", error?.stack || error);
+    console.error(`Breeze Web Agent inspection failed during ${inspectionStage}:`, error?.stack || error);
     res.status(502).json({
       ok: false,
       error: "The page could not be inspected. It may block automated browsers or take too long to load.",
+      stage: inspectionStage,
       detail: process.env.NODE_ENV === "production" ? undefined : String(error.message || error).slice(0, 300)
     });
   } finally {
