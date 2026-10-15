@@ -155,8 +155,9 @@ app.post("/api/workflow", async (req, res) => {
         await page.close().catch(() => {});
       }
     }
-    await context.close();
-    return res.json({
+    // Send the completed research before browser cleanup. On small free instances,
+    // Chromium shutdown can stall and otherwise leave the browser waiting for a response.
+    res.json({
       ok: true,
       service: "big-shark",
       workflow: "public-page-research",
@@ -164,6 +165,7 @@ app.post("/api/workflow", async (req, res) => {
       pageCount: results.length,
       results
     });
+    await context.close().catch(() => {});
   } catch (error) {
     console.error("Big Shark workflow failed:", error?.stack || error);
     return res.status(502).json({ ok: false, error: "The browser workflow could not start. Try again later." });
