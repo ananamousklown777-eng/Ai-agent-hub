@@ -79,7 +79,7 @@ function allowRate(ip) {
 
 app.get("/health", (_req, res) => res.json({
   ok: true,
-  service: "breeze-web-agent",
+  service: "big-shark",
   version: "0.1.0",
   feature: "public webpage inspection",
   productionReady: false
@@ -176,13 +176,13 @@ app.post("/api/inspect", async (req, res) => {
       const screenshotBase64 = await captureWithCdp(40);
       screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
     } catch (firstError) {
-      console.warn("Breeze Web Agent direct screenshot failed; trying a lighter capture:", firstError?.message || firstError);
+      console.warn("Big Shark direct screenshot failed; trying a lighter capture:", firstError?.message || firstError);
       try {
         const screenshotBase64 = await captureWithCdp(25);
         screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
       } catch (retryError) {
         screenshotError = "Screenshot unavailable after two direct capture attempts. Page text and links were still extracted.";
-        console.warn("Breeze Web Agent screenshot fallback failed:", retryError?.message || retryError);
+        console.warn("Big Shark screenshot fallback failed:", retryError?.message || retryError);
       }
     } finally {
       if (screenshotSession) await screenshotSession.detach().catch(() => {});
@@ -198,7 +198,7 @@ app.post("/api/inspect", async (req, res) => {
     });
     await context.close();
   } catch (error) {
-    console.error(`Breeze Web Agent inspection failed during ${inspectionStage}:`, error?.stack || error);
+    console.error(`Big Shark inspection failed during ${inspectionStage}:`, error?.stack || error);
     res.status(502).json({
       ok: false,
       error: "The page could not be inspected. It may block automated browsers or take too long to load.",
@@ -211,5 +211,5 @@ app.post("/api/inspect", async (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Breeze Web Agent listening on port ${PORT}`);
+  console.log(`Big Shark listening on port ${PORT}`);
 });
