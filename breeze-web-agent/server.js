@@ -1,5 +1,6 @@
 import express from "express";
-import { chromium } from "playwright";
+import chromium from "@sparticuz/chromium";
+import { chromium as playwright } from "playwright-core";
 import dns from "node:dns/promises";
 import net from "node:net";
 import path from "node:path";
@@ -92,7 +93,11 @@ app.post("/api/inspect", async (req, res) => {
 
   let browser;
   try {
-    browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+    browser = await playwright.launch({
+      headless: true,
+      args: chromium.args,
+      executablePath: await chromium.executablePath()
+    });
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       serviceWorkers: "block",
