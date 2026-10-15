@@ -34,7 +34,7 @@
 <main>
   <div class="tag">Early prototype · v0.1</div>
   <h1>Big Shark</h1>
-  <p>Give a public webpage to Big Shark. It opens the page, summarizes its basic content, collects useful links, and takes a screenshot. One small step toward a reusable browser tool, not a magic robot army.</p>
+  <p>Give a public webpage to Big Shark. It reads the page, summarizes its basic content, and collects useful links. Screenshot capture is temporarily paused while browser performance is stabilized.</p>
   <section class="panel">
     <form id="inspect-form">
       <label for="url">Public website URL</label>
@@ -66,7 +66,7 @@
   <section id="results" class="result" aria-live="polite">
     <div class="panel"><h2 id="page-title">Page title</h2><p id="page-description"></p><p class="small">Final URL: <a id="final-url" target="_blank" rel="noopener noreferrer"></a></p><h3>Page text</h3><pre id="page-text"></pre></div>
     <div class="panel"><h3>Links found</h3><ul id="links"></ul></div>
-    <div class="panel"><h3>Screenshot</h3><p id="screenshot-note" class="small">Screenshot will appear here when available.</p><img id="screenshot" alt="Screenshot of the inspected webpage"></div>
+    <div class="panel"><h3>Screenshot</h3><p id="screenshot-note" class="small">Screenshot capture is temporarily paused. Page text and links remain available.</p><img id="screenshot" alt="Screenshot of the inspected webpage"></div>
   </section>
   <footer>Prototype only. Not production-ready and not affiliated with TinyFish or any browser vendor. Automated inspection may fail on sites that block bots or require sign-in.</footer>
 </main>
