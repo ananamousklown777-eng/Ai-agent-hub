@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: breeze-web-agent
+    runtime: node
+    plan: free
+    rootDir: breeze-web-agent
+    buildCommand: npm install && npx playwright install --with-deps chromium
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
