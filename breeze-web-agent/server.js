@@ -149,8 +149,26 @@ app.post("/api/workflow", async (req, res) => {
         }));
         results.push({ ok: true, requestedUrl: target.href, finalUrl: page.url(), ...data });
       } catch (error) {
-        results.push({ ok: false, requestedUrl: target.href, error: "This page could not be read; it may block automated browsers or time out." });
-        console.warn("Big Shark workflow page failed:", target.href, String(error?.message || error).slice(0, 200));
+        const detail = String(error?.message || error).slice(0, 240);
+        let reason = "The page could not be read.";
+        if (/timeout|timed out|exceeded/i.test(detail)) {
+          reason = "Navigation timed out. The site may be slow or may block automated browsers.";
+        } else if (/net::err_name_not_resolved|name not resolved|dns/i.test(detail)) {
+          reason = "The website hostname could not be resolved.";
+        } else if (/blockedbyclient|blocked|ERR_BLOCKED/i.test(detail)) {
+          reason = "A page request was blocked by Big Shark's public-network safety checks or by the site.";
+        } else if (/target closed|browser has been closed|page has been closed/i.test(detail)) {
+          reason = "The browser page closed before inspection finished. Try again once.";
+        } else if (/net::err_|navigation/i.test(detail)) {
+          reason = "The browser could not finish loading this page.";
+        }
+        results.push({
+          ok: false,
+          requestedUrl: target.href,
+          error: reason,
+          diagnostic: process.env.NODE_ENV === "production" ? undefined : detail
+        });
+        console.warn("Big Shark workflow page failed:", target.href, detail);
       } finally {
         await page.close().catch(() => {});
       }
