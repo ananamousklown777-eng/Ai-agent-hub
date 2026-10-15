@@ -145,6 +145,10 @@ app.post("/api/inspect", async (req, res) => {
       return { title, description, text, links };
     });
     inspectionStage = "capturing screenshot";
+    // Stop lingering page requests/animations before capture. Some storefronts keep
+    // network activity running indefinitely, which can starve Chromium's screenshot compositor.
+    await page.evaluate(() => window.stop()).catch(() => {});
+    await page.waitForTimeout(150).catch(() => {});
     // Capture directly through Chromium's DevTools protocol. Playwright's screenshot
     // helper waits for document fonts, which can stall on complex sites with blocked
     // or never-ending font requests. CDP captures the already-rendered viewport directly.
