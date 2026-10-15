@@ -252,7 +252,7 @@ app.post("/api/inspect", async (req, res) => {
         executablePath: await chromium.executablePath()
       });
       screenshotContext = await screenshotBrowser.newContext({
-        viewport: { width: 1024, height: 768 },
+        viewport: { width: 800, height: 600 },
         serviceWorkers: "block",
         acceptDownloads: false
       });
@@ -282,7 +282,7 @@ app.post("/api/inspect", async (req, res) => {
       const screenshotBuffer = await screenshotPage.screenshot({
         type: "jpeg",
         quality: 35,
-        timeout: 12000,
+        timeout: 18000,
         animations: "disabled",
         caret: "hide"
       });
