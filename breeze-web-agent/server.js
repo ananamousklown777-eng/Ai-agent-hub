@@ -145,40 +145,47 @@ app.post("/api/inspect", async (req, res) => {
       return { title, description, text, links };
     });
     inspectionStage = "capturing screenshot";
-    // A screenshot is optional: slow font rendering must not discard successfully extracted page content.
+    // Capture directly through Chromium's DevTools protocol. Playwright's screenshot
+    // helper waits for document fonts, which can stall on complex sites with blocked
+    // or never-ending font requests. CDP captures the already-rendered viewport directly.
     let screenshotDataUrl = null;
     let screenshotError = null;
-    try {
-      // Give complex pages more time for screenshot rendering, especially when fonts
-      // and late-loading assets are still settling after DOM content has loaded.
-      const screenshot = await page.screenshot({
-        type: "jpeg",
-        quality: 40,
-        fullPage: false,
-        timeout: 12000,
-        animations: "disabled",
-        caret: "hide",
-        scale: "css"
+    let screenshotSession;
+    const captureWithCdp = async quality => {
+      screenshotSession ??= await context.newCDPSession(page);
+      const capture = screenshotSession.send("Page.captureScreenshot", {
+        format: "jpeg",
+        quality,
+        fromSurface: true,
+        captureBeyondViewport: false
       });
-      screenshotDataUrl = `data:image/jpeg;base64,${screenshot.toString("base64")}`;
-    } catch (firstError) {
-      console.warn("Breeze Web Agent screenshot first attempt failed; trying lightweight fallback:", firstError?.message || firstError);
+      let timeoutId;
       try {
-        // Retry once with a shorter viewport-only capture and without waiting for animations.
-        const screenshot = await page.screenshot({
-          type: "jpeg",
-          quality: 30,
-          fullPage: false,
-          timeout: 5000,
-          animations: "disabled",
-          caret: "hide",
-          scale: "css"
-        });
-        screenshotDataUrl = `data:image/jpeg;base64,${screenshot.toString("base64")}`;
+        const response = await Promise.race([
+          capture,
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error("Chromium screenshot capture timed out")), 8000);
+          })
+        ]);
+        return response.data;
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    };
+    try {
+      const screenshotBase64 = await captureWithCdp(40);
+      screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
+    } catch (firstError) {
+      console.warn("Breeze Web Agent direct screenshot failed; trying a lighter capture:", firstError?.message || firstError);
+      try {
+        const screenshotBase64 = await captureWithCdp(25);
+        screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
       } catch (retryError) {
-        screenshotError = "Screenshot unavailable after two attempts. Page text and links were still extracted.";
+        screenshotError = "Screenshot unavailable after two direct capture attempts. Page text and links were still extracted.";
         console.warn("Breeze Web Agent screenshot fallback failed:", retryError?.message || retryError);
       }
+    } finally {
+      if (screenshotSession) await screenshotSession.detach().catch(() => {});
     }
     res.json({
       ok: true,
