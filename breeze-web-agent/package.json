@@ -1,8 +1,8 @@
 {
-  "name": "breeze-web-agent",
+  "name": "big-shark",
   "version": "0.1.0",
   "private": true,
-  "description": "Early browser automation MVP powered by Playwright",
+  "description": "Big Shark public webpage inspection prototype powered by Playwright",
   "type": "module",
   "scripts": {
     "start": "node server.js"
