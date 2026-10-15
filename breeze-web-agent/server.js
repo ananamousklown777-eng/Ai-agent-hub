@@ -193,12 +193,21 @@ app.post("/api/inspect", async (req, res) => {
     } catch (firstError) {
       console.warn("Big Shark first screenshot attempt failed:", firstError?.stack || firstError);
       try {
-        const screenshotBase64 = await captureWithCdp(25);
+        // Use Playwright's own screenshot path as a genuinely different fallback.
+        // A second CDP attempt cannot help if the CDP capture command itself is stalled.
+        const screenshotBuffer = await page.screenshot({
+          type: "jpeg",
+          quality: 35,
+          timeout: 8000,
+          animations: "disabled",
+          caret: "hide"
+        });
+        const screenshotBase64 = screenshotBuffer.toString("base64");
         screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
-        console.log("Big Shark fallback screenshot captured successfully:", Math.round(screenshotBase64.length * 0.75), "bytes");
+        console.log("Big Shark Playwright fallback screenshot captured successfully:", screenshotBuffer.length, "bytes");
       } catch (retryError) {
-        screenshotError = "Screenshot unavailable after two direct capture attempts. Page text and links were still extracted.";
-        console.warn("Big Shark second screenshot attempt failed:", retryError?.stack || retryError);
+        screenshotError = "Screenshot unavailable: both Chromium capture methods failed. Page text and links were still extracted.";
+        console.warn("Big Shark Playwright fallback screenshot failed:", retryError?.stack || retryError);
       }
     }
     res.json({
