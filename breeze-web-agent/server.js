@@ -123,7 +123,7 @@ app.post("/api/workflow", async (req, res) => {
     const results = [];
     for (const target of validated) {
       const page = await context.newPage();
-      page.setDefaultNavigationTimeout(15000);
+      page.setDefaultNavigationTimeout(8000);
       page.setDefaultTimeout(4000);
       await page.route("**/*", async route => {
         try {
@@ -136,8 +136,8 @@ app.post("/api/workflow", async (req, res) => {
         }
       });
       try {
-        await page.goto(target.href, { waitUntil: "domcontentloaded", timeout: 15000 });
-        await page.waitForTimeout(300);
+        await page.goto(target.href, { waitUntil: "domcontentloaded", timeout: 8000 });
+        await page.waitForTimeout(100);
         const data = await page.evaluate(() => ({
           title: document.title || "",
           description: document.querySelector('meta[name="description"]')?.content || "",
