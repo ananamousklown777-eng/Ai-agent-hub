@@ -145,70 +145,49 @@ app.post("/api/inspect", async (req, res) => {
       return { title, description, text, links };
     });
     inspectionStage = "capturing screenshot";
-    // Stop lingering page requests/animations before capture. Some storefronts keep
-    // network activity running indefinitely, which can starve Chromium's screenshot compositor.
-    await page.evaluate(() => window.stop()).catch(() => {});
-    await page.waitForTimeout(150).catch(() => {});
-    // Capture directly through Chromium's DevTools protocol. Playwright's screenshot
-    // helper waits for document fonts, which can stall on complex sites with blocked
-    // or never-ending font requests. CDP captures the already-rendered viewport directly.
+    // Do not capture from the same renderer that just inspected a complex storefront.
+    // Start a fresh, lightweight page and skip heavy visual assets so screenshot
+    // capture has a separate renderer and a much smaller compositor workload.
     let screenshotDataUrl = null;
     let screenshotError = null;
-    const captureWithCdp = async quality => {
-      let session;
-      let timeoutId;
-      const captureOperation = (async () => {
-        session = await context.newCDPSession(page);
-        await session.send("Page.enable");
-        const response = await session.send("Page.captureScreenshot", {
-          format: "jpeg",
-          quality,
-          fromSurface: true,
-          captureBeyondViewport: false
-        });
-        return response.data;
-      })();
-      try {
-        // The deadline covers session creation, Page.enable, and capture itself.
-        // Never wait for detach: a wedged CDP connection must not stall the response.
-        return await Promise.race([
-          captureOperation,
-          new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error("Chromium screenshot operation timed out after 8 seconds")), 8000);
-          })
-        ]);
-      } finally {
-        if (timeoutId) clearTimeout(timeoutId);
-        if (session) session.detach().catch(() => {});
-      }
-    };
+    let screenshotPage;
     try {
-      console.log("Big Shark screenshot attempt starting:", JSON.stringify({
-        url: page.url(),
-        viewport: page.viewportSize()
-      }));
-      const screenshotBase64 = await captureWithCdp(40);
-      screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
-      console.log("Big Shark screenshot captured successfully:", Math.round(screenshotBase64.length * 0.75), "bytes");
-    } catch (firstError) {
-      console.warn("Big Shark first screenshot attempt failed:", firstError?.stack || firstError);
-      try {
-        // Use Playwright's own screenshot path as a genuinely different fallback.
-        // A second CDP attempt cannot help if the CDP capture command itself is stalled.
-        const screenshotBuffer = await page.screenshot({
-          type: "jpeg",
-          quality: 35,
-          timeout: 8000,
-          animations: "disabled",
-          caret: "hide"
-        });
-        const screenshotBase64 = screenshotBuffer.toString("base64");
-        screenshotDataUrl = `data:image/jpeg;base64,${screenshotBase64}`;
-        console.log("Big Shark Playwright fallback screenshot captured successfully:", screenshotBuffer.length, "bytes");
-      } catch (retryError) {
-        screenshotError = "Screenshot unavailable: both Chromium capture methods failed. Page text and links were still extracted.";
-        console.warn("Big Shark Playwright fallback screenshot failed:", retryError?.stack || retryError);
-      }
+      screenshotPage = await context.newPage();
+      await screenshotPage.setViewportSize({ width: 1024, height: 768 });
+      screenshotPage.setDefaultNavigationTimeout(12000);
+      await screenshotPage.route("**/*", async route => {
+        const request = route.request();
+        if (["image", "media", "font"].includes(request.resourceType())) {
+          return route.abort("blockedbyclient");
+        }
+        try {
+          const requestUrl = request.url();
+          if (requestUrl.startsWith("data:") || requestUrl.startsWith("blob:") || requestUrl === "about:blank") {
+            return route.continue();
+          }
+          await assertPublicUrl(requestUrl);
+          return route.continue();
+        } catch {
+          return route.abort("blockedbyclient");
+        }
+      });
+      console.log("Big Shark lightweight screenshot page starting:", JSON.stringify({ url: target.href, viewport: { width: 1024, height: 768 } }));
+      await screenshotPage.goto(target.href, { waitUntil: "domcontentloaded", timeout: 12000 });
+      await screenshotPage.waitForTimeout(500);
+      const screenshotBuffer = await screenshotPage.screenshot({
+        type: "jpeg",
+        quality: 40,
+        timeout: 12000,
+        animations: "disabled",
+        caret: "hide"
+      });
+      screenshotDataUrl = `data:image/jpeg;base64,${screenshotBuffer.toString("base64")}`;
+      console.log("Big Shark lightweight screenshot captured successfully:", screenshotBuffer.length, "bytes");
+    } catch (screenshotFailure) {
+      screenshotError = "Screenshot unavailable. Text and links were collected, but the separate lightweight capture page failed.";
+      console.warn("Big Shark lightweight screenshot capture failed:", screenshotFailure?.stack || screenshotFailure);
+    } finally {
+      if (screenshotPage) await screenshotPage.close().catch(() => {});
     }
     res.json({
       ok: true,
