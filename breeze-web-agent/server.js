@@ -144,14 +144,30 @@ app.post("/api/inspect", async (req, res) => {
       return { title, description, text, links };
     });
     inspectionStage = "capturing screenshot";
-    const screenshot = await page.screenshot({ type: "jpeg", quality: 55, fullPage: false, timeout: 10000 });
+    // A screenshot is optional: slow font rendering must not discard successfully extracted page content.
+    let screenshotDataUrl = null;
+    let screenshotError = null;
+    try {
+      const screenshot = await page.screenshot({
+        type: "jpeg",
+        quality: 45,
+        fullPage: false,
+        timeout: 5000,
+        animations: "disabled"
+      });
+      screenshotDataUrl = `data:image/jpeg;base64,${screenshot.toString("base64")}`;
+    } catch (error) {
+      screenshotError = "Screenshot unavailable because the browser took too long. Page text and links were still extracted.";
+      console.warn("Breeze Web Agent screenshot skipped:", error?.message || error);
+    }
     res.json({
       ok: true,
       requestedUrl: target.href,
       finalUrl: page.url(),
       inspectedAt: new Date().toISOString(),
       ...result,
-      screenshotDataUrl: `data:image/jpeg;base64,${screenshot.toString("base64")}`
+      screenshotDataUrl,
+      screenshotError
     });
     await context.close();
   } catch (error) {
