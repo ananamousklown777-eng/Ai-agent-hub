@@ -100,3 +100,78 @@ paths:
           description: Rate limit reached
         "502":
           description: Website inspection failed
+
+  /api/workflow:
+    post:
+      operationId: runPublicPageResearchWorkflow
+      summary: Research up to three public webpages in one run
+      description: >
+        Read-only browser workflow. Returns title, description, readable text,
+        and useful links for each public page. Does not click buttons, submit
+        forms, sign in, or execute user-provided code. Never use with private
+        pages, credentials, personal data, or URLs that trigger sensitive actions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [urls]
+              properties:
+                urls:
+                  type: array
+                  minItems: 1
+                  maxItems: 3
+                  items:
+                    type: string
+                    format: uri
+                    maxLength: 2048
+      responses:
+        "200":
+          description: Per-page research results; individual pages may fail independently
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  workflow:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+                  pageCount:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ok:
+                          type: boolean
+                        requestedUrl:
+                          type: string
+                        finalUrl:
+                          type: string
+                        title:
+                          type: string
+                        description:
+                          type: string
+                        text:
+                          type: string
+                        links:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              text:
+                                type: string
+                              url:
+                                type: string
+        "400":
+          description: Invalid URL or blocked private/local address
+        "429":
+          description: Rate limit reached
+        "502":
+          description: Browser workflow failed to start
