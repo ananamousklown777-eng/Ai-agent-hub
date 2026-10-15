@@ -232,18 +232,36 @@ app.post("/api/inspect", async (req, res) => {
       return { title, description, text, links };
     });
     inspectionStage = "capturing screenshot";
-    // Do not capture from the same renderer that just inspected a complex storefront.
-    // Start a fresh, lightweight page and skip heavy visual assets so screenshot
-    // capture has a separate renderer and a much smaller compositor workload.
+    // Release the content-inspection renderer before screenshot capture. The screenshot
+    // runs in a new Chromium process so a heavy page cannot leave the original renderer
+    // consuming the limited memory available on a free host.
+    await page.close().catch(() => {});
+    await context.close().catch(() => {});
+    await browser.close().catch(() => {});
+    browser = null;
+
     let screenshotDataUrl = null;
     let screenshotError = null;
+    let screenshotBrowser;
+    let screenshotContext;
     let screenshotPage;
     try {
-      screenshotPage = await context.newPage();
-      await screenshotPage.setViewportSize({ width: 1024, height: 768 });
+      screenshotBrowser = await playwright.launch({
+        headless: true,
+        args: chromium.args,
+        executablePath: await chromium.executablePath()
+      });
+      screenshotContext = await screenshotBrowser.newContext({
+        viewport: { width: 1024, height: 768 },
+        serviceWorkers: "block",
+        acceptDownloads: false
+      });
+      screenshotPage = await screenshotContext.newPage();
       screenshotPage.setDefaultNavigationTimeout(12000);
+      screenshotPage.setDefaultTimeout(4000);
       await screenshotPage.route("**/*", async route => {
         const request = route.request();
+        // Keep the page lightweight. CSS and scripts remain available to preserve layout.
         if (["image", "media", "font"].includes(request.resourceType())) {
           return route.abort("blockedbyclient");
         }
@@ -258,23 +276,25 @@ app.post("/api/inspect", async (req, res) => {
           return route.abort("blockedbyclient");
         }
       });
-      console.log("Big Shark lightweight screenshot page starting:", JSON.stringify({ url: target.href, viewport: { width: 1024, height: 768 } }));
+      console.log("Big Shark isolated screenshot process starting:", JSON.stringify({ url: target.href, viewport: { width: 1024, height: 768 } }));
       await screenshotPage.goto(target.href, { waitUntil: "domcontentloaded", timeout: 12000 });
-      await screenshotPage.waitForTimeout(500);
+      await screenshotPage.waitForTimeout(350);
       const screenshotBuffer = await screenshotPage.screenshot({
         type: "jpeg",
-        quality: 40,
+        quality: 35,
         timeout: 12000,
         animations: "disabled",
         caret: "hide"
       });
       screenshotDataUrl = `data:image/jpeg;base64,${screenshotBuffer.toString("base64")}`;
-      console.log("Big Shark lightweight screenshot captured successfully:", screenshotBuffer.length, "bytes");
+      console.log("Big Shark isolated screenshot captured successfully:", screenshotBuffer.length, "bytes");
     } catch (screenshotFailure) {
-      screenshotError = "Screenshot unavailable. Text and links were collected, but the separate lightweight capture page failed.";
-      console.warn("Big Shark lightweight screenshot capture failed:", screenshotFailure?.stack || screenshotFailure);
+      screenshotError = "Screenshot unavailable. Text and links were collected, but isolated screenshot capture failed.";
+      console.warn("Big Shark isolated screenshot capture failed:", screenshotFailure?.stack || screenshotFailure);
     } finally {
       if (screenshotPage) await screenshotPage.close().catch(() => {});
+      if (screenshotContext) await screenshotContext.close().catch(() => {});
+      if (screenshotBrowser) await screenshotBrowser.close().catch(() => {});
     }
     res.json({
       ok: true,
@@ -285,7 +305,6 @@ app.post("/api/inspect", async (req, res) => {
       screenshotDataUrl,
       screenshotError
     });
-    await context.close();
   } catch (error) {
     console.error(`Big Shark inspection failed during ${inspectionStage}:`, error?.stack || error);
     res.status(502).json({
