@@ -151,28 +151,31 @@ app.post("/api/inspect", async (req, res) => {
     let screenshotDataUrl = null;
     let screenshotError = null;
     const captureWithCdp = async quality => {
-      // Use a fresh CDP session per attempt. If a capture command stalls, do not
-      // reuse its possibly wedged protocol session for the fallback attempt.
-      const session = await context.newCDPSession(page);
+      let session;
       let timeoutId;
-      try {
+      const captureOperation = (async () => {
+        session = await context.newCDPSession(page);
         await session.send("Page.enable");
-        const capture = session.send("Page.captureScreenshot", {
+        const response = await session.send("Page.captureScreenshot", {
           format: "jpeg",
           quality,
           fromSurface: true,
           captureBeyondViewport: false
         });
-        const response = await Promise.race([
-          capture,
+        return response.data;
+      })();
+      try {
+        // The deadline covers session creation, Page.enable, and capture itself.
+        // Never wait for detach: a wedged CDP connection must not stall the response.
+        return await Promise.race([
+          captureOperation,
           new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error("Chromium screenshot capture timed out after 8 seconds")), 8000);
+            timeoutId = setTimeout(() => reject(new Error("Chromium screenshot operation timed out after 8 seconds")), 8000);
           })
         ]);
-        return response.data;
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
-        await session.detach().catch(() => {});
+        if (session) session.detach().catch(() => {});
       }
     };
     try {
