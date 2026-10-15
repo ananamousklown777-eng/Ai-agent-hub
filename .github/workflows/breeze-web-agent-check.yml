@@ -1,0 +1,33 @@
+name: Breeze Web Agent checks
+
+on:
+  push:
+    paths:
+      - "breeze-web-agent/**"
+      - ".github/workflows/breeze-web-agent-check.yml"
+  pull_request:
+    paths:
+      - "breeze-web-agent/**"
+      - ".github/workflows/breeze-web-agent-check.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: breeze-web-agent
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: breeze-web-agent/package.json
+      - name: Install dependencies
+        run: npm install
+      - name: Check JavaScript syntax
+        run: node --check server.js
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
