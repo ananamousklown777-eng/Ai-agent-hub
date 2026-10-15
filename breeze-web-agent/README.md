@@ -1,6 +1,6 @@
-# Breeze Web Agent
+# Big Shark
 
-Breeze Web Agent is an early, separate browser-automation MVP for AI Agent Hub. It uses Playwright to open a public webpage, collect its title and readable text, list links, and capture a screenshot.
+Big Shark is an early, separate browser-automation MVP for AI Agent Hub. It uses Playwright to open a public webpage, collect its title and readable text, list links, and capture a screenshot.
 
 ## Current scope
 
