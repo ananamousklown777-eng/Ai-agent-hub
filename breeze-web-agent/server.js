@@ -149,17 +149,36 @@ app.post("/api/inspect", async (req, res) => {
     let screenshotDataUrl = null;
     let screenshotError = null;
     try {
+      // Give complex pages more time for screenshot rendering, especially when fonts
+      // and late-loading assets are still settling after DOM content has loaded.
       const screenshot = await page.screenshot({
         type: "jpeg",
-        quality: 45,
+        quality: 40,
         fullPage: false,
-        timeout: 5000,
-        animations: "disabled"
+        timeout: 12000,
+        animations: "disabled",
+        caret: "hide",
+        scale: "css"
       });
       screenshotDataUrl = `data:image/jpeg;base64,${screenshot.toString("base64")}`;
-    } catch (error) {
-      screenshotError = "Screenshot unavailable because the browser took too long. Page text and links were still extracted.";
-      console.warn("Breeze Web Agent screenshot skipped:", error?.message || error);
+    } catch (firstError) {
+      console.warn("Breeze Web Agent screenshot first attempt failed; trying lightweight fallback:", firstError?.message || firstError);
+      try {
+        // Retry once with a shorter viewport-only capture and without waiting for animations.
+        const screenshot = await page.screenshot({
+          type: "jpeg",
+          quality: 30,
+          fullPage: false,
+          timeout: 5000,
+          animations: "disabled",
+          caret: "hide",
+          scale: "css"
+        });
+        screenshotDataUrl = `data:image/jpeg;base64,${screenshot.toString("base64")}`;
+      } catch (retryError) {
+        screenshotError = "Screenshot unavailable after two attempts. Page text and links were still extracted.";
+        console.warn("Breeze Web Agent screenshot fallback failed:", retryError?.message || retryError);
+      }
     }
     res.json({
       ok: true,
