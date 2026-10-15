@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Inspect public webpages with Breeze Web Agent, an early browser automation prototype.">
+  <title>Breeze Web Agent</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1020; --panel:#141c30; --line:#293650; --text:#eef3ff; --muted:#a7b5ce; --accent:#80e0d0; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(circle at top right,#1b3150 0,transparent 38%),var(--bg); color:var(--text); font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; }
+    main { width:min(920px,100%); margin:auto; padding:28px 18px 60px; }
+    .tag { color:var(--accent); font-size:.78rem; letter-spacing:.12em; font-weight:800; text-transform:uppercase; }
+    h1 { font-size:clamp(2rem,8vw,3.5rem); line-height:1.05; margin:.5rem 0 1rem; }
+    p { color:var(--muted); }
+    .panel { background:rgba(20,28,48,.94); border:1px solid var(--line); border-radius:18px; padding:20px; margin-top:18px; }
+    label { display:block; font-weight:700; margin-bottom:8px; }
+    .controls { display:flex; gap:10px; flex-wrap:wrap; }
+    input { min-width:0; flex:1 1 240px; padding:14px; border-radius:10px; border:1px solid #40516e; background:#080e1b; color:var(--text); font:inherit; }
+    button { padding:14px 18px; border:0; border-radius:10px; background:var(--accent); color:#06201e; font:inherit; font-weight:800; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:wait; }
+    #status { min-height:1.5em; }
+    .result { display:none; }
+    .result h2 { font-size:1.2rem; overflow-wrap:anywhere; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; color:#dce6f8; max-height:360px; overflow:auto; font:14px/1.5 ui-monospace,monospace; }
+    a { color:var(--accent); overflow-wrap:anywhere; }
+    img { width:100%; border:1px solid var(--line); border-radius:12px; margin-top:12px; }
+    .small { font-size:.85rem; }
+    footer { margin-top:28px; font-size:.85rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <div class="tag">Early prototype · v0.1</div>
+  <h1>Breeze Web Agent</h1>
+  <p>Give a public webpage to Breeze. It opens the page, summarizes its basic content, collects useful links, and takes a screenshot. One small step toward a reusable browser tool, not a magic robot army.</p>
+  <section class="panel">
+    <form id="inspect-form">
+      <label for="url">Public website URL</label>
+      <div class="controls">
+        <input id="url" name="url" type="url" placeholder="https://example.com" required maxlength="2048" autocomplete="url">
+        <button id="submit" type="submit">Inspect page</button>
+      </div>
+    </form>
+    <p class="small">For public pages only. Local/private network addresses are blocked. Do not enter passwords, private account pages, or sensitive information. Limited to five runs per IP per ten minutes in this prototype.</p>
+    <p id="status" role="status" aria-live="polite"></p>
+  </section>
+  <section id="results" class="result" aria-live="polite">
+    <div class="panel"><h2 id="page-title">Page title</h2><p id="page-description"></p><p class="small">Final URL: <a id="final-url" target="_blank" rel="noopener noreferrer"></a></p><h3>Page text</h3><pre id="page-text"></pre></div>
+    <div class="panel"><h3>Links found</h3><ul id="links"></ul></div>
+    <div class="panel"><h3>Screenshot</h3><img id="screenshot" alt="Screenshot of the inspected webpage"></div>
+  </section>
+  <footer>Prototype only. Not production-ready and not affiliated with TinyFish or any browser vendor. Automated inspection may fail on sites that block bots or require sign-in.</footer>
+</main>
+<script>
+  const form = document.querySelector("#inspect-form");
+  const button = document.querySelector("#submit");
+  const status = document.querySelector("#status");
+  const results = document.querySelector("#results");
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    results.style.display = "none";
+    button.disabled = true;
+    status.textContent = "Opening the page. This can take a little while...";
+    try {
+      const response = await fetch("/api/inspect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: document.querySelector("#url").value.trim() })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || "Inspection failed.");
+      document.querySelector("#page-title").textContent = data.title || "(No page title)";
+      document.querySelector("#page-description").textContent = data.description || "No meta description found.";
+      const finalLink = document.querySelector("#final-url");
+      finalLink.href = data.finalUrl;
+      finalLink.textContent = data.finalUrl;
+      document.querySelector("#page-text").textContent = data.text || "(No readable text found)";
+      const list = document.querySelector("#links");
+      list.replaceChildren();
+      for (const item of data.links || []) {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = item.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = item.text + " · " + item.url;
+        li.appendChild(a);
+        list.appendChild(li);
+      }
+      document.querySelector("#screenshot").src = data.screenshotDataUrl;
+      results.style.display = "block";
+      status.textContent = "Inspection complete.";
+    } catch (error) {
+      status.textContent = error.message || "Something went wrong.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
