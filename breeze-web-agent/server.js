@@ -116,7 +116,7 @@ app.post("/api/workflow", async (req, res) => {
       executablePath: await chromium.executablePath()
     });
     const context = await browser.newContext({
-      viewport: { width: 1024, height: 768 },
+      viewport: { width: 800, height: 600 },
       serviceWorkers: "block",
       acceptDownloads: false
     });
