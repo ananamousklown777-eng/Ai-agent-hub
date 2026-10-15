@@ -279,13 +279,30 @@ app.post("/api/inspect", async (req, res) => {
       console.log("Big Shark isolated screenshot process starting:", JSON.stringify({ url: target.href, viewport: { width: 1024, height: 768 } }));
       await screenshotPage.goto(target.href, { waitUntil: "domcontentloaded", timeout: 12000 });
       await screenshotPage.waitForTimeout(350);
-      const screenshotBuffer = await screenshotPage.screenshot({
-        type: "jpeg",
-        quality: 35,
-        timeout: 18000,
-        animations: "disabled",
-        caret: "hide"
+      // Use Chrome DevTools Protocol directly rather than Playwright's screenshot
+      // helper, which can stall while preparing a complex page for capture.
+      await screenshotPage.evaluate(() => {
+        document.querySelectorAll("iframe, video, audio").forEach(element => element.remove());
+        const style = document.createElement("style");
+        style.textContent = `
+          *, *::before, *::after {
+            animation: none !important;
+            transition: none !important;
+            caret-color: transparent !important;
+          }
+          html { scroll-behavior: auto !important; }
+        `;
+        document.documentElement.appendChild(style);
       });
+      const cdp = await screenshotContext.newCDPSession(screenshotPage);
+      const capture = await cdp.send("Page.captureScreenshot", {
+        format: "jpeg",
+        quality: 30,
+        fromSurface: true,
+        captureBeyondViewport: false
+      });
+      await cdp.detach().catch(() => {});
+      const screenshotBuffer = Buffer.from(capture.data, "base64");
       screenshotDataUrl = `data:image/jpeg;base64,${screenshotBuffer.toString("base64")}`;
       console.log("Big Shark isolated screenshot captured successfully:", screenshotBuffer.length, "bytes");
     } catch (screenshotFailure) {
