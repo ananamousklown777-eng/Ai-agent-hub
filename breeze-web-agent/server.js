@@ -14,6 +14,7 @@ app.use(express.json({ limit: "10kb" }));
 app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
 const windows = new Map();
+const dnsCache = new Map();
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_RUNS_PER_WINDOW = 5;
 
@@ -48,9 +49,15 @@ async function assertPublicUrl(raw) {
     if (privateIp) throw new Error("Private and local network addresses are blocked.");
     return url;
   }
-  let addresses;
-  try { addresses = await dns.lookup(hostname, { all: true, verbatim: true }); }
-  catch { throw new Error("The website hostname could not be resolved."); }
+  let addresses = dnsCache.get(hostname);
+  if (!addresses) {
+    try {
+      addresses = await dns.lookup(hostname, { all: true, verbatim: true });
+      dnsCache.set(hostname, addresses);
+      // Keep DNS results briefly to avoid repeating lookups for every page asset.
+      setTimeout(() => dnsCache.delete(hostname), 60_000).unref?.();
+    } catch { throw new Error("The website hostname could not be resolved."); }
+  }
   if (!addresses.length || addresses.some(item => net.isIPv4(item.address) ? isPrivateIPv4(item.address) : isPrivateIPv6(item.address))) {
     throw new Error("This website resolves to a private or unsupported network address and was blocked.");
   }
@@ -111,7 +118,7 @@ app.post("/api/inspect", async (req, res) => {
     await page.route("**/*", async route => {
       try {
         const requestUrl = route.request().url();
-        if (requestUrl.startsWith("data:") || requestUrl.startsWith("blob:")) return route.continue();
+        if (requestUrl.startsWith("data:") || requestUrl.startsWith("blob:") || requestUrl === "about:blank") return route.continue();
         await assertPublicUrl(requestUrl);
         return route.continue();
       } catch {
@@ -142,6 +149,7 @@ app.post("/api/inspect", async (req, res) => {
     });
     await context.close();
   } catch (error) {
+    console.error("Breeze Web Agent inspection failed:", error?.stack || error);
     res.status(502).json({
       ok: false,
       error: "The page could not be inspected. It may block automated browsers or take too long to load.",
