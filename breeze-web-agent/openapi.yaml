@@ -1,0 +1,102 @@
+openapi: 3.1.0
+info:
+  title: Big Shark Browser Inspection API
+  version: 0.1.0
+  description: >
+    A self-hosted, open-source browser inspection endpoint. It inspects public
+    webpages and returns page title, description, readable text, links, and
+    a screenshot when the host can capture one. Prototype only.
+servers:
+  - url: https://breeze-web-agent.onrender.com
+paths:
+  /health:
+    get:
+      operationId: checkBigSharkHealth
+      summary: Check whether Big Shark is running
+      responses:
+        "200":
+          description: Service health and prototype status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  service:
+                    type: string
+                  version:
+                    type: string
+                  feature:
+                    type: string
+                  productionReady:
+                    type: boolean
+  /api/inspect:
+    post:
+      operationId: inspectPublicWebpage
+      summary: Inspect a public webpage
+      description: >
+        Only use for public pages. Never submit credentials, private account
+        URLs, personal information, or URLs that trigger sensitive actions.
+        Screenshot capture is best-effort and may fail on some sites or hosts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: Full public HTTP or HTTPS URL.
+      responses:
+        "200":
+          description: Inspection result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  requestedUrl:
+                    type: string
+                  finalUrl:
+                    type: string
+                  inspectedAt:
+                    type: string
+                    format: date-time
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  text:
+                    type: string
+                  links:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        text:
+                          type: string
+                        url:
+                          type: string
+                  screenshotDataUrl:
+                    type:
+                      - string
+                      - "null"
+                    description: Base64 data URL when screenshot capture succeeds.
+                  screenshotError:
+                    type:
+                      - string
+                      - "null"
+        "400":
+          description: Invalid URL or blocked private/local address
+        "429":
+          description: Rate limit reached
+        "502":
+          description: Website inspection failed
