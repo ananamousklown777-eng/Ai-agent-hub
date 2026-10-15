@@ -245,23 +245,37 @@ app.post("/api/inspect", async (req, res) => {
     let screenshotBrowser;
     let screenshotContext;
     let screenshotPage;
-    try {
+    let screenshotStage = "launching screenshot browser";
+    let screenshotDeadline;
+    const cleanupScreenshot = async () => {
+      const cleanup = Promise.allSettled([
+        screenshotPage?.close(),
+        screenshotContext?.close(),
+        screenshotBrowser?.close()
+      ]);
+      await Promise.race([
+        cleanup,
+        new Promise(resolve => setTimeout(resolve, 1500))
+      ]);
+    };
+    const captureScreenshot = async () => {
       screenshotBrowser = await playwright.launch({
         headless: true,
         args: chromium.args,
         executablePath: await chromium.executablePath()
       });
+      screenshotStage = "creating screenshot context";
       screenshotContext = await screenshotBrowser.newContext({
         viewport: { width: 800, height: 600 },
         serviceWorkers: "block",
         acceptDownloads: false
       });
       screenshotPage = await screenshotContext.newPage();
-      screenshotPage.setDefaultNavigationTimeout(12000);
-      screenshotPage.setDefaultTimeout(4000);
+      screenshotPage.setDefaultNavigationTimeout(10000);
+      screenshotPage.setDefaultTimeout(3000);
+      screenshotStage = "setting screenshot request filters";
       await screenshotPage.route("**/*", async route => {
         const request = route.request();
-        // Keep the page lightweight. CSS and scripts remain available to preserve layout.
         if (["image", "media", "font"].includes(request.resourceType())) {
           return route.abort("blockedbyclient");
         }
@@ -276,43 +290,58 @@ app.post("/api/inspect", async (req, res) => {
           return route.abort("blockedbyclient");
         }
       });
-      console.log("Big Shark isolated screenshot process starting:", JSON.stringify({ url: target.href, viewport: { width: 1024, height: 768 } }));
-      await screenshotPage.goto(target.href, { waitUntil: "domcontentloaded", timeout: 12000 });
-      await screenshotPage.waitForTimeout(350);
-      // Use Chrome DevTools Protocol directly rather than Playwright's screenshot
-      // helper, which can stall while preparing a complex page for capture.
+      console.log("Big Shark screenshot stage:", screenshotStage);
+      screenshotStage = "loading screenshot page";
+      console.log("Big Shark screenshot stage:", screenshotStage, target.href);
+      await screenshotPage.goto(target.href, { waitUntil: "domcontentloaded", timeout: 10000 });
+      screenshotStage = "preparing screenshot page";
+      console.log("Big Shark screenshot stage:", screenshotStage);
+      await screenshotPage.waitForTimeout(250);
       await screenshotPage.evaluate(() => {
         document.querySelectorAll("iframe, video, audio").forEach(element => element.remove());
         const style = document.createElement("style");
-        style.textContent = `
-          *, *::before, *::after {
-            animation: none !important;
-            transition: none !important;
-            caret-color: transparent !important;
-          }
-          html { scroll-behavior: auto !important; }
-        `;
+        style.textContent = "*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}html{scroll-behavior:auto!important}";
         document.documentElement.appendChild(style);
       });
+      screenshotStage = "capturing screenshot image";
+      console.log("Big Shark screenshot stage:", screenshotStage);
       const cdp = await screenshotContext.newCDPSession(screenshotPage);
-      const capture = await cdp.send("Page.captureScreenshot", {
-        format: "jpeg",
-        quality: 30,
-        fromSurface: true,
-        captureBeyondViewport: false
-      });
-      await cdp.detach().catch(() => {});
-      const screenshotBuffer = Buffer.from(capture.data, "base64");
-      screenshotDataUrl = `data:image/jpeg;base64,${screenshotBuffer.toString("base64")}`;
-      console.log("Big Shark isolated screenshot captured successfully:", screenshotBuffer.length, "bytes");
+      try {
+        const capture = await cdp.send("Page.captureScreenshot", {
+          format: "jpeg",
+          quality: 30,
+          fromSurface: true,
+          captureBeyondViewport: false
+        });
+        const screenshotBuffer = Buffer.from(capture.data, "base64");
+        if (!screenshotBuffer.length) throw new Error("Browser returned an empty screenshot.");
+        screenshotDataUrl = `data:image/jpeg;base64,${screenshotBuffer.toString("base64")}`;
+        console.log("Big Shark screenshot captured successfully:", screenshotBuffer.length, "bytes");
+      } finally {
+        await cdp.detach().catch(() => {});
+      }
+    };
+    try {
+      // A screenshot is optional: never let a stuck browser hold the whole inspection open.
+      await Promise.race([
+        captureScreenshot(),
+        new Promise((_, reject) => {
+          screenshotDeadline = setTimeout(() => {
+            console.error("Big Shark screenshot hard timeout at stage:", screenshotStage);
+            reject(new Error("Screenshot attempt exceeded the 18-second safety limit"));
+            void cleanupScreenshot();
+          }, 18000);
+          screenshotDeadline.unref?.();
+        })
+      ]);
     } catch (screenshotFailure) {
-      const screenshotReason = String(screenshotFailure?.message || "unknown screenshot error").replace(/https?:\/\/\S+/g, "[website URL]").slice(0, 220);
-      screenshotError = `Screenshot unavailable: ${screenshotReason}. Text and links were collected, but screenshot capture failed.`;
-      console.warn("Big Shark isolated screenshot capture failed:", screenshotFailure?.stack || screenshotFailure);
+      const screenshotReason = String(screenshotFailure?.message || "unknown screenshot error")
+        .replace(/https?:\/\/\S+/g, "[website URL]").slice(0, 220);
+      screenshotError = `Screenshot unavailable during ${screenshotStage}: ${screenshotReason}. Text and links were collected; screenshot capture was skipped.`;
+      console.warn("Big Shark screenshot failed:", screenshotError);
     } finally {
-      if (screenshotPage) await screenshotPage.close().catch(() => {});
-      if (screenshotContext) await screenshotContext.close().catch(() => {});
-      if (screenshotBrowser) await screenshotBrowser.close().catch(() => {});
+      if (screenshotDeadline) clearTimeout(screenshotDeadline);
+      await cleanupScreenshot();
     }
     res.json({
       ok: true,
