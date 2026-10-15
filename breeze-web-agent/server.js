@@ -232,25 +232,27 @@ app.post("/api/inspect", async (req, res) => {
       return { title, description, text, links };
     });
     inspectionStage = "finishing inspection";
-    // Screenshot capture repeatedly stalls on some pages and can exceed the hosting
-    // platform's request window. Return collected text and links promptly instead of
-    // risking a dropped request. Screenshot support can be reintroduced as a separate,
-    // independently timed operation after it is reliable.
+    // Capture the URL before cleanup. Send the response before closing Chromium,
+    // because browser shutdown can stall on low-memory free hosting instances.
+    const finalUrl = page.url();
     const screenshotDataUrl = null;
     const screenshotError = "Screenshot capture is temporarily paused while browser performance is stabilized. Page text and links were collected.";
-    await page.close().catch(() => {});
-    await context.close().catch(() => {});
-    await browser.close().catch(() => {});
-    browser = null;
+    console.info("Big Shark inspection content collected:", {
+      host: target.hostname,
+      textLength: result.text.length,
+      linkCount: result.links.length
+    });
     res.json({
       ok: true,
       requestedUrl: target.href,
-      finalUrl: page.url(),
+      finalUrl,
       inspectedAt: new Date().toISOString(),
       ...result,
       screenshotDataUrl,
       screenshotError
     });
+    await page.close().catch(() => {});
+    await context.close().catch(() => {});
   } catch (error) {
     console.error(`Big Shark inspection failed during ${inspectionStage}:`, error?.stack || error);
     res.status(502).json({
