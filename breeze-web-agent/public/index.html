@@ -68,8 +68,22 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: document.querySelector("#url").value.trim() })
       });
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.error || "Inspection failed.");
+      const contentType = response.headers.get("content-type") || "";
+      const responseText = await response.text();
+      let data;
+      if (contentType.includes("application/json")) {
+        try { data = JSON.parse(responseText); }
+        catch { throw new Error("The server sent invalid JSON (HTTP " + response.status + "). Check the service logs."); }
+      } else {
+        const serviceHint = response.status === 502 || response.status === 503
+          ? " The service may be starting, restarting, or failing its browser check."
+          : "";
+        throw new Error("The server returned a webpage instead of JSON (HTTP " + response.status + ")." + serviceHint + " Open the health link to check whether the service is online.");
+      }
+      if (!response.ok || !data.ok) {
+        const stageHint = data.stage ? " Failed during: " + data.stage + "." : "";
+        throw new Error((data.error || "Inspection failed.") + stageHint);
+      }
       document.querySelector("#page-title").textContent = data.title || "(No page title)";
       document.querySelector("#page-description").textContent = data.description || "No meta description found.";
       const finalLink = document.querySelector("#final-url");
