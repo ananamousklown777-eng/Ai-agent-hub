@@ -10,6 +10,25 @@ Big Shark is an early, separate browser-automation MVP for AI Agent Hub. It uses
 - Basic request throttling and private-network URL blocking
 - No account system, billing, saved sessions, or customer credentials yet
 
+## API integration
+
+The API contract for clients that support OpenAPI is in `openapi.yaml`.
+It exposes the health check and the public-page inspection endpoint. This is
+an integration contract, not an automatically installed ChatGPT plugin; a
+client must be configured to call this service.
+
+Example request:
+
+```bash
+curl -X POST https://breeze-web-agent.onrender.com/api/inspect \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com"}'
+```
+
+Screenshot capture is best-effort and must be verified on the target host.
+The free Render instance can sleep between requests and has limited resources.
+Do not send private pages, credentials, or sensitive information.
+
 ## Run locally
 
 Requires Node.js 20 or newer.
