@@ -85,6 +85,93 @@ app.get("/health", (_req, res) => res.json({
   productionReady: false
 }));
 
+
+/**
+ * Free, read-only multi-page workflow endpoint.
+ * Accepts up to 3 public URLs and returns structured research results.
+ * Deliberately does not click, submit forms, log in, or run user-supplied code.
+ */
+app.post("/api/workflow", async (req, res) => {
+  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  if (!allowRate(ip)) return res.status(429).json({ ok: false, error: "Rate limit reached. Try again in 10 minutes." });
+
+  const urls = req.body?.urls;
+  if (!Array.isArray(urls) || urls.length < 1 || urls.length > 3 ||
+      urls.some(url => typeof url !== "string" || url.length > 2048)) {
+    return res.status(400).json({ ok: false, error: "Provide an array of 1 to 3 public website URLs, each up to 2048 characters." });
+  }
+
+  const validated = [];
+  try {
+    for (const raw of urls) validated.push(await assertPublicUrl(raw));
+  } catch (error) {
+    return res.status(400).json({ ok: false, error: error.message });
+  }
+
+  let browser;
+  try {
+    browser = await playwright.launch({
+      headless: true,
+      args: chromium.args,
+      executablePath: await chromium.executablePath()
+    });
+    const context = await browser.newContext({
+      viewport: { width: 1024, height: 768 },
+      serviceWorkers: "block",
+      acceptDownloads: false
+    });
+    const results = [];
+    for (const target of validated) {
+      const page = await context.newPage();
+      page.setDefaultNavigationTimeout(15000);
+      page.setDefaultTimeout(4000);
+      await page.route("**/*", async route => {
+        try {
+          const requestUrl = route.request().url();
+          if (requestUrl.startsWith("data:") || requestUrl.startsWith("blob:") || requestUrl === "about:blank") return route.continue();
+          await assertPublicUrl(requestUrl);
+          return route.continue();
+        } catch {
+          return route.abort("blockedbyclient");
+        }
+      });
+      try {
+        await page.goto(target.href, { waitUntil: "domcontentloaded", timeout: 15000 });
+        await page.waitForTimeout(300);
+        const data = await page.evaluate(() => ({
+          title: document.title || "",
+          description: document.querySelector('meta[name="description"]')?.content || "",
+          text: (document.body?.innerText || "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 12000),
+          links: Array.from(document.querySelectorAll("a[href]"))
+            .map(a => ({ text: (a.innerText || a.getAttribute("aria-label") || "").trim().slice(0, 120), url: a.href }))
+            .filter(a => a.text && /^https?:/.test(a.url))
+            .slice(0, 25)
+        }));
+        results.push({ ok: true, requestedUrl: target.href, finalUrl: page.url(), ...data });
+      } catch (error) {
+        results.push({ ok: false, requestedUrl: target.href, error: "This page could not be read; it may block automated browsers or time out." });
+        console.warn("Big Shark workflow page failed:", target.href, String(error?.message || error).slice(0, 200));
+      } finally {
+        await page.close().catch(() => {});
+      }
+    }
+    await context.close();
+    return res.json({
+      ok: true,
+      service: "big-shark",
+      workflow: "public-page-research",
+      completedAt: new Date().toISOString(),
+      pageCount: results.length,
+      results
+    });
+  } catch (error) {
+    console.error("Big Shark workflow failed:", error?.stack || error);
+    return res.status(502).json({ ok: false, error: "The browser workflow could not start. Try again later." });
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+  }
+});
+
 app.post("/api/inspect", async (req, res) => {
   const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
   if (!allowRate(ip)) return res.status(429).json({ ok: false, error: "Rate limit reached. Try again in 10 minutes." });
