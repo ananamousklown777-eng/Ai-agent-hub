@@ -24,7 +24,8 @@
     .result h2 { font-size:1.2rem; overflow-wrap:anywhere; }
     pre { white-space:pre-wrap; overflow-wrap:anywhere; color:#dce6f8; max-height:360px; overflow:auto; font:14px/1.5 ui-monospace,monospace; }
     a { color:var(--accent); overflow-wrap:anywhere; }
-    img { width:100%; border:1px solid var(--line); border-radius:12px; margin-top:12px; }\n    #screenshot { display:none; }
+    img { width:100%; border:1px solid var(--line); border-radius:12px; margin-top:12px; }
+    #screenshot { display:none; }
     .small { font-size:.85rem; }
     footer { margin-top:28px; font-size:.85rem; color:var(--muted); }
   </style>
@@ -102,7 +103,17 @@
         li.appendChild(a);
         list.appendChild(li);
       }
-      const screenshot = document.querySelector("#screenshot");\n      const screenshotNote = document.querySelector("#screenshot-note");\n      if (data.screenshotDataUrl) {\n        screenshot.src = data.screenshotDataUrl;\n        screenshot.style.display = "block";\n        screenshotNote.textContent = "";\n      } else {\n        screenshot.removeAttribute("src");\n        screenshot.style.display = "none";\n        screenshotNote.textContent = data.screenshotError || "Screenshot unavailable; the page text and links were still collected.";\n      }
+      const screenshot = document.querySelector("#screenshot");
+      const screenshotNote = document.querySelector("#screenshot-note");
+      if (data.screenshotDataUrl) {
+        screenshot.src = data.screenshotDataUrl;
+        screenshot.style.display = "block";
+        screenshotNote.textContent = "";
+      } else {
+        screenshot.removeAttribute("src");
+        screenshot.style.display = "none";
+        screenshotNote.textContent = data.screenshotError || "Screenshot unavailable; the page text and links were still collected.";
+      }
       results.style.display = "block";
       status.textContent = "Inspection complete.";
     } catch (error) {
