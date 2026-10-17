@@ -71,14 +71,16 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     const freeOffer = /\b(?:free|complimentary|no[- ]obligation)\b[^.!?]{0,60}\b(?:estimates?|quotes?|consultations?|assessments?|inspections?|washes?|details?|detailing|services?|samples?|demos?|work|labor|labour)\b|\b(?:offer|give|provide|include|promise|advertise|promote|perform|do)\b[^.!?]{0,140}\b(?:free|complimentary|no[- ]obligation)\b[^.!?]{0,100}\b(?:estimate|quote|consultation|assessment|inspection|wash|detail|service|sample|demo|work)\b|\bfirst\s+\d+\s+(?:replies|respondents|customers|people|clients)\b[^.!?]{0,100}\b(?:free|complimentary|no[- ]cost|at no extra cost)\b/i;
     for (const sentence of sentences) {
       const match = freeOffer.exec(sentence);
-      if (match && !isNegatedBefore(sentence, match.index)) {
+      const explicitlyWarnsAgainstFreeOffer = /\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?;]{0,120}\b(?:free|complimentary|no[- ]obligation)\b/i.test(sentence);
+      if (match && !explicitlyWarnsAgainstFreeOffer && !isNegatedBefore(sentence, match.index)) {
         violations.push("user-prohibited free service, estimate, or giveaway");
       }
     }
   }
   // Never recommend logging names, contact details, vehicle identifiers, or other identifying details
   // unless the user explicitly asks for that data collection.
-  const userRequestsPersonalData = /\b(?:collect|record|store|log|track)\b[^.!?]{0,100}\b(?:personal information|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\b/i.test(String(userQuestion));
+  const userRequestsPersonalData = /\b(?:collect|record|store|log|track)\b[^.!?]{0,100}\b(?:personal information|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\b/i.test(String(userQuestion)) &&
+    !/\b(?:without|do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,150}\b(?:collect|record|store|log|track)\b[^.!?]{0,100}\b(?:personal information|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\b/i.test(String(userQuestion));
   if (!userRequestsPersonalData) {
     const personalLog = /\b(?:spreadsheet|sheet|table|tracker|log|record|collect|store|track)\b[^.!?]{0,120}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?|personal information)\b|\b(?:record|collect|store|log|track)\b[^.!?]{0,80}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?|personal information)\b/i;
     for (const sentence of sentences) {
