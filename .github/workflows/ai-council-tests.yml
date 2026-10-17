@@ -1,0 +1,26 @@
+name: AI Council regression tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-council-sandbox/**'
+      - '.github/workflows/ai-council-tests.yml'
+  pull_request:
+    paths:
+      - 'ai-council-sandbox/**'
+      - '.github/workflows/ai-council-tests.yml'
+
+jobs:
+  quality-policy-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run Council quality-policy regression tests
+        working-directory: ai-council-sandbox
+        run: npm test
