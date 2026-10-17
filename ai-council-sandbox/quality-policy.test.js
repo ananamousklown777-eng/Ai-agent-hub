@@ -67,3 +67,5 @@ test("does not flag a warning against printing in a zero-budget plan", () => ass
 test("flags paid services in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Hire a marketing service to promote the business.", "No budget; use free tools only.").some(x => x.includes("zero-budget constraint"))));
 test("flags an incomplete Delta finding", () => assert.ok(findAgentFormatViolations("1. Verify the active account before Day\n2. Track inquiries daily.\n3. Review bookings at the end.", "delta").some(x => x.includes("finding 1 appears incomplete"))));
 test("accepts three complete Delta findings", () => assert.deepEqual(findAgentFormatViolations("1. Verify the account before posting.\n2. Track inquiries in a free notes app.\n3. Review confirmed bookings at the end.", "delta"), []));
+
+test("flags physical flyer distribution in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Hand out flyers in nearby neighborhoods.", "Free tools only; no money to spend.").some(x => x.includes("zero-budget constraint"))));
