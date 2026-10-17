@@ -67,7 +67,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
   const noSpend = /\b(?:free tools? only|no money to spend|no budget|zero[- ]budget|without spending (?:any )?money|anything that requires spending money|do not spend money|don't spend money|no-cost only|at no cost)\b/i.test(String(userQuestion));
   if (noSpend) {
     const costActions = [
-      ["printing or physical flyers", /\b(?:print(?:ing|ed)?\b.{0,40}\b(?:flyers?|handouts?|posters?|leaflets?)|(?:flyers?|handouts?|posters?|leaflets?)\b.{0,25}\b(?:to print|printed|print and distribute)|pay for printing|printing costs?)\b/i],
+      ["printing or physical flyers", /\b(?:print(?:ing|ed)?\b.{0,40}\b(?:flyers?|handouts?|posters?|leaflets?)|(?:hand out|pass out|distribute)\b.{0,25}\b(?:flyers?|handouts?|posters?|leaflets?)|(?:flyers?|handouts?|posters?|leaflets?)\b.{0,25}\b(?:to print|printed|print and distribute)|pay for printing|printing costs?)\b/i],
       ["purchases or paid services", /\b(?:buy|purchase|pay for|hire|subscribe to|paid plan|membership fee|service fee|postage|shipping fee|boosted post|paid ad|paid advertising|paid promotion)\b/i],
       ["fuel or travel expense", /\b(?:drive around|drive through|travel to multiple locations|fuel costs?|gas money|paid parking)\b/i]
     ];
