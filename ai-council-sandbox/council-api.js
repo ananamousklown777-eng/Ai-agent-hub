@@ -111,7 +111,7 @@ async function ask(system, user, maxTokens = 1000) {
 async function askBusinessSafe(system, user, agentId = "", policyContext = user) {
   // gpt-oss is a reasoning model: completion tokens also cover internal reasoning,
   // so small caps can truncate even short visible answers.
-  const outputLimit = agentId === "sol" ? 1500 : agentId === "quinn" ? 1500 : 900;
+  const outputLimit = agentId === "sol" ? 1100 : agentId === "quinn" ? 1100 : 600;
   let response = await ask(system, user, outputLimit);
   if (!response) return { response: "", qualityFlagged: false };
   let violations = [...findBusinessPolicyViolations(response, policyContext), ...findAgentFormatViolations(response, agentId)];
@@ -120,7 +120,7 @@ async function askBusinessSafe(system, user, agentId = "", policyContext = user)
   // and makes rate limits more likely; the original role instructions remain in the system message.
   const correction = system + "\n\nQUALITY GATE: Fix every listed violation. Follow the user's explicit constraints. Do not invent facts, costs, conversion rates, or results. For zero-budget requests, recommend only actions that require no spending; no printing, physical flyers, purchases, subscriptions, postage, or fuel-dependent outreach. Reviews must be genuine and voluntary. Do not ask non-customers for reviews or reward reviews. Mention Google Business Profile eligibility only with service-area nuance. Delta must provide exactly three complete numbered findings with practical corrections. Sol must use exactly the five required headings and exactly three numbered actions. Return concise, complete Markdown.";
   const rewritePrompt = user + "\n\nQUALITY CHECK: Fix these issues: " + violations.join("; ") + ". Keep the answer concise, preserve the user's constraints, and provide only the corrected answer.";
-  response = await ask(correction, rewritePrompt, agentId === "sol" ? 1200 : agentId === "quinn" ? 1100 : 900);
+  response = await ask(correction, rewritePrompt, agentId === "sol" ? 800 : agentId === "quinn" ? 800 : 600);
   violations = [...findBusinessPolicyViolations(response, policyContext), ...findAgentFormatViolations(response, agentId)];
   if (!response || violations.length) {
     return { response: "Quality check could not safely validate this response, so it has been withheld. Treat this agent's contribution as incomplete and rely only on recommendations that can be checked against the business's actual information. Validation flags: " + violations.join("; ") + ".", qualityFlagged: true };
