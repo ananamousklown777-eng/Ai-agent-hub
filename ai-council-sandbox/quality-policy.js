@@ -1,6 +1,6 @@
 function isNegatedBefore(text, index) {
   const prefix = text.slice(Math.max(0, index - 100), index);
-  return /\b(?:do not|don't|never|avoid|not recommend|shouldn't|should not|without|skip|exclude|forbid|prohibit)\b[^.!?;]{0,85}$/i.test(prefix);
+  return /\b(?:do not|don't|never|avoid|not|not recommend|shouldn't|should not|without|skip|exclude|forbid|prohibit)\b[^.!?;]{0,85}$/i.test(prefix);
 }
 function hasActionVerb(sentence) {
   return /\b(?:recommend|suggest|try|use|print|hand out|walk|drive|travel|buy|host|run|organize|organise|pay for|invest in|offer|give|launch|boost|spend on|hire|consider|start|create|distribute|advertise with|promote through|implement|encourage|ask|request|remind|include|provide|perform|invite|send|write|track|measure|record|count|monitor|log|leverage)\b/i.test(sentence);
@@ -82,7 +82,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
   const userRequestsPersonalData = /\b(?:collect|record|store|log|track)\b[^.!?]{0,100}\b(?:personal information|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\b/i.test(String(userQuestion)) &&
     !/\b(?:without|do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,150}\b(?:collect(?:ing)?|record(?:ing)?|stor(?:e|ing)|log(?:ging)?|track(?:ing)?)\b[^.!?]{0,100}\b(?:personal information|personal data|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\b/i.test(String(userQuestion));
   if (!userRequestsPersonalData) {
-    const personalLog = /\b(?:spreadsheet|sheet|table|tracker|log|record|collect|store|track)\b[^.!?]{0,120}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?|personal information)\b|\b(?:record|collect|store|log|track)\b[^.!?]{0,80}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?|personal information)\b/i;
+    const personalLog = /\b(?:spreadsheet|sheet|table|tracker|log|record|collect|store|track)\b[^.!?]{0,120}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|registration|license plates?)|personal information)\b|\b(?:record|collect|store|log|track)\b[^.!?]{0,80}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|registration|license plates?)|personal information)\b/i;
     for (const sentence of sentences) {
       const match = personalLog.exec(sentence);
       if (match && !isNegatedBefore(sentence, match.index)) {
