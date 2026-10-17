@@ -59,7 +59,7 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     const reviewSolicitation = /\b(?:ask|tell|encourage|have|get|request)\b.{0,100}\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:reviews?|ratings?)\b|\b(?:friends?|family|neighbors?|former coworkers?|non-customers?)\b.{0,100}\b(?:leave|post|write)\b.{0,50}\b(?:reviews?|ratings?)\b/i.exec(sentence);
     if (reviewSolicitation && !isNegatedBefore(sentence, reviewSolicitation.index)) violations.push("review solicitation from non-customers");
     const reviewReward = /\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b.{0,60}\b(?:reviews?|ratings?)\b|\b(?:reviews?|ratings?)\b.{0,60}\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\b/i.exec(sentence);
-    if (reviewReward && !isNegatedBefore(sentence, reviewReward.index)) violations.push("incentivized reviews");
+    if (reviewReward && !isNegatedBefore(sentence, reviewReward.index) && !/\\b(?:without|no|never|do not|don't|not)\\b[^.!?;]{0,70}\\b(?:reward|incentive|discount|gift|giveaway|freebie|compensation)\\b/i.test(sentence) && !/\\b(?:do not|don't|never|avoid|without)\\b[^.!?;]{0,70}\\b(?:incentivized|incentivised|rewarded)\\b/i.test(sentence)) violations.push("incentivized reviews");
     const freeWork = /\b(?:free (?:demo|service|detail(?:ing)?|sample)|detail(?:ing)? (?:a|their|the) car for free)\b.{0,160}\b(?:in exchange for|for a|to get|to receive)\b.{0,50}\btestimonials?\b|\btestimonials?\b.{0,100}\b(?:in exchange for|in return for)\b.{0,50}\bfree\b/i.exec(sentence);
     if (freeWork && !evaluatePromotion) violations.push("free work offered in exchange for a testimonial");
   }
