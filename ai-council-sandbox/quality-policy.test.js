@@ -82,7 +82,7 @@ test("flags asking for a phone number or email when personal information is forb
   assert.ok(findBusinessPolicyViolations("Ask each interested customer for a phone number or email address to confirm the booking.", strictQuestion).some(x => x.includes("personal contact information")));
 });
 test("flags logging contact details despite a promise not to store names", () => {
-  assert.ok(findBusinessPolicyViolations("Use a private sheet with Contact Method (phone or email), but do not store names.", strictQuestion).some(x => x.includes("personal or identifying details") || x.includes("personal contact information")));
+  assert.ok(findBusinessPolicyViolations("Use a private sheet to log phone numbers, but do not store names.", strictQuestion).some(x => x.includes("personal or identifying details") || x.includes("personal contact information")));
 });
 test("does not flag a clear warning against no-cost service offers", () => {
   assert.deepEqual(findBusinessPolicyViolations("Do not offer a wash at no cost to the customer.", strictQuestion), []);
