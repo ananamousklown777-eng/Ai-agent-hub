@@ -92,9 +92,20 @@ async function ask(system, user, maxTokens = 1000) {
       });
       data = await r.json().catch(() => ({}));
       if (r.status === 429 && attempt === 0 && /rate.?limit|too many requests/i.test(data.error?.message || "")) {
-        // Groq can return short transient rate limits. Wait briefly and retry once, never loop indefinitely.
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        continue;
+        // Respect short provider reset hints instead of blindly retrying after five seconds.
+        // Do not hold a free Render request open for a long quota reset; surface the limit cleanly.
+        const retryAfter = Number(r.headers.get("retry-after"));
+        const resetHint = r.headers.get("x-ratelimit-reset-requests") || r.headers.get("x-ratelimit-reset-tokens") || "";
+        const resetMatch = resetHint.trim().match(/^(\d+(?:\.\d+)?)(ms|s|m)?$/i);
+        const hintedMs = Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1000
+          : resetMatch
+            ? Number(resetMatch[1]) * ({ms:1,s:1000,m:60000}[(resetMatch[2] || "s").toLowerCase()] || 1000)
+            : 5000;
+        if (hintedMs <= 10000) {
+          await new Promise(resolve => setTimeout(resolve, Math.max(1000, hintedMs)));
+          continue;
+        }
       }
       break;
     }
