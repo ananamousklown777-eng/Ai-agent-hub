@@ -88,6 +88,30 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
       }
     }
   }
+  // Catch no-cost offers phrased without the word "free" (for example, "a wash at no cost").
+  const userBansFreeOffers = /\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,700}\b(?:free services?|free samples?|free demos?|free estimates?|no[- ]obligation estimates?|free washes?|free car details?|anything that costs money)\b/i.test(String(userQuestion));
+  if (userBansFreeOffers) {
+    const noCostOffer = /\b(?:at no cost|no cost to (?:the )?(?:customer|client)|free of charge|at no charge)\b/i;
+    for (const sentence of sentences) {
+      if (noCostOffer.test(sentence) && /\b(?:wash(?:es)?|detail(?:ing)?|service|estimate|quote|consultation|inspection|assessment|work)\b/i.test(sentence) &&
+          /\b(?:offer(?:ing)?|provide|promote|recommend|advertise|include|give|do|post|suggest)\b/i.test(sentence) &&
+          !/\b(?:do not|don't|never|avoid|not offer|not provide|without offering)\b[^.!?]{0,100}\b(?:at no cost|no cost|free of charge|at no charge)\b/i.test(sentence)) {
+        violations.push("user-prohibited free service or offer phrased as no-cost");
+      }
+    }
+  }
+  // If the user forbids collecting personal information, asking for a phone number or email is also a violation,
+  // even when the answer says not to store those details in a spreadsheet.
+  const userBansPersonalData = /\b(?:without collecting personal information|do not collect personal information|don't collect personal information|avoid collecting personal information|no personal information|without collecting personal data|do not collect personal data|don't collect personal data)\b/i.test(String(userQuestion));
+  if (userBansPersonalData) {
+    const asksForContact = /\b(?:ask|request|collect|get|obtain|have|invite|tell)\b[^.!?]{0,100}\b(?:phone number|email address|email|contact method|contact details|contact information|phone or email)\b|\b(?:phone number|email address|contact details|contact information)\b[^.!?]{0,100}\b(?:to confirm|for booking|for appointment|to book|send|provide)\b/i;
+    for (const sentence of sentences) {
+      const match = asksForContact.exec(sentence);
+      if (match && !isNegatedBefore(sentence, match.index)) {
+        violations.push("user-prohibited request for personal contact information");
+      }
+    }
+  }
   const noSpend = /\b(?:free tools? only|no money to spend|no budget|zero[- ]budget|without spending (?:any )?money|anything that requires spending money|do not spend money|don't spend money|no-cost only|at no cost)\b/i.test(String(userQuestion));
   if (noSpend) {
     const costActions = [
