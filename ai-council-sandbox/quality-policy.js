@@ -63,6 +63,23 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     const freeWork = /\b(?:free (?:demo|service|detail(?:ing)?|sample)|detail(?:ing)? (?:a|their|the) car for free)\b.{0,160}\b(?:in exchange for|for a|to get|to receive)\b.{0,50}\btestimonials?\b|\btestimonials?\b.{0,100}\b(?:in exchange for|in return for)\b.{0,50}\bfree\b/i.exec(sentence);
     if (freeWork && !evaluatePromotion) violations.push("free work offered in exchange for a testimonial");
   }
+  // A zero-budget constraint is stricter than merely avoiding paid ads: flag actions that predictably require supplies, printing, postage, fuel, or purchases. Warnings against these actions are allowed.
+  const noSpend = /\b(?:free tools? only|no money to spend|no budget|zero[- ]budget|without spending (?:any )?money|anything that requires spending money|do not spend money|don't spend money|no-cost only|at no cost)\b/i.test(String(userQuestion));
+  if (noSpend) {
+    const costActions = [
+      ["printing or physical flyers", /\b(?:print(?:ing|ed)? (?:a |the |any )?(?:flyer|handout|poster|leaflet)|(?:flyers?|handouts?|leaflets?)\s+(?:to print|printed|print and distribute)|pay for printing|printing costs?)\b/i],
+      ["purchases or paid services", /\b(?:buy|purchase|pay for|hire|subscribe to|paid plan|membership fee|service fee|postage|shipping fee|boosted post|paid ad|paid advertising|paid promotion)\b/i],
+      ["fuel or travel expense", /\b(?:drive around|drive through|travel to multiple locations|fuel costs?|gas money|paid parking)\b/i]
+    ];
+    for (const sentence of sentences) {
+      for (const [label, pattern] of costActions) {
+        const match = pattern.exec(sentence);
+        if (match && hasActionVerb(sentence) && !isNegatedBefore(sentence, match.index)) {
+          violations.push("zero-budget constraint violated: " + label);
+        }
+      }
+    }
+  }
   const numericTarget = /\b(?:reach|target|achieve|secure|convert|generate|obtain|book|close|collect|get|aim for|at least)\s+(?:about\s+|around\s+)?(\d+)\s+(?:new\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\b|\b(\d+)\s+(?:new\s+)?(?:inquir(?:y|ies)|leads?|appointments?|paying customers?|customers?|sales|bookings?)\s+(?:in|by|during|per)\s+(?:week|day|month)\b/ig;
   for (const match of source.matchAll(numericTarget)) {
     const n = match[1] || match[2];
@@ -78,9 +95,16 @@ export function findAgentFormatViolations(text, agentId) {
   const violations = [];
   const source = String(text ?? "");
   if (agentId === "delta") {
-    const numbered = [...source.matchAll(/^\s*\d+[.)]\s+/gm)].length;
-    if (numbered !== 3) violations.push("Delta must provide exactly three numbered findings");
+    const numbered = [...source.matchAll(/^\s*\d+[.)]\s+/gm)];
+    if (numbered.length !== 3) violations.push("Delta must provide exactly three numbered findings");
     if (!/\b(?:correction|corrected|correct|replace|revise|instead|remove|change|check|verify|measure|track|confirm|avoid|use|recommend|set|calculate|compare|limit|clarify|separate|record|test|ask|identify|require|state|explain)\b/i.test(source)) violations.push("critique does not provide concrete corrections");
+    // Delta findings are deliberately short; reject cut-off sentences instead of showing fragments as a successful review.
+    for (let i = 0; i < numbered.length; i++) {
+      const start = numbered[i].index;
+      const end = i + 1 < numbered.length ? numbered[i + 1].index : source.length;
+      const finding = source.slice(start, end).trim().replace(/\s+/g, " ");
+      if (!/[.!?](?:[”’"')\]]*)?$/.test(finding)) violations.push("Delta finding " + (i + 1) + " appears incomplete");
+    }
   }
   if (agentId === "sol") {
     const required = ["Best recommendation", "Three concrete actions", "Main risk", "What we still don't know", "How to measure success"];
