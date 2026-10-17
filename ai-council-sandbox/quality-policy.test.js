@@ -69,3 +69,5 @@ test("flags an incomplete Delta finding", () => assert.ok(findAgentFormatViolati
 test("accepts three complete Delta findings", () => assert.deepEqual(findAgentFormatViolations("1. Verify the account before posting.\n2. Track inquiries in a free notes app.\n3. Review confirmed bookings at the end.", "delta"), []));
 
 test("flags physical flyer distribution in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Hand out flyers in nearby neighborhoods.", "Free tools only; no money to spend.").some(x => x.includes("zero-budget constraint"))));
+
+test("flags fuel-dependent outreach in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Drive through nearby residential areas to find prospects.", "Free tools only; no money to spend.").some(x => x.includes("zero-budget constraint"))));
