@@ -42,9 +42,21 @@ run.addEventListener("click", async () => {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || ("Request failed with HTTP " + response.status));
-    statusBox.textContent = data.complete === false
-      ? "Council returned a partial result. Empty agent(s): " + ((data.missing_agents || []).join(", ") || "unknown") + ". Check the cards below; this run is not complete."
-      : "Council completed successfully.";
+    const missingAgents = Array.isArray(data.missing_agents) ? data.missing_agents : [];
+    const qualityWarnings = Array.isArray(data.quality_warnings) ? data.quality_warnings : [];
+    const flaggedAgents = (data.agents || []).filter(agent => agent.quality_flagged).map(agent => agent.id || agent.name || "unidentified agent");
+    const flagged = [...new Set([...qualityWarnings, ...flaggedAgents])];
+    const isComplete = data.complete === true && missingAgents.length === 0 && flagged.length === 0 &&
+      ["quinn", "delta", "sol"].every(id => (data.agents || []).some(agent => agent.id === id && typeof agent.response === "string" && agent.response.trim()));
+    if (isComplete) {
+      statusBox.textContent = "Council completed successfully: Quinn, Delta, and Sol all returned validated responses.";
+    } else {
+      const problems = [];
+      if (missingAgents.length) problems.push("missing agent(s): " + missingAgents.join(", "));
+      if (flagged.length) problems.push("quality check failed for: " + flagged.join(", "));
+      if (!missingAgents.length && !flagged.length) problems.push("the server did not confirm all three validated responses");
+      statusBox.textContent = "COUNCIL TEST FAILED. " + problems.join("; ") + ". This run is incomplete and must not be treated as a successful result.";
+    }
     for (const agent of (data.agents || [])) {
       const card = document.createElement("article");
       card.className = "agent";
