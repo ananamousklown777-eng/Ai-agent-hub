@@ -60,3 +60,10 @@ test("flags free informational sessions and workshops under strict no-free-offer
 test("requires service-area eligibility nuance whenever Google Business Profile is recommended", () => {
   assert.ok(findBusinessPolicyViolations("Set up a Google Business Profile and check eligibility for in-person businesses.").some(x => x.includes("service-area business nuance")));
 });
+
+
+test("flags printing in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Print a one-page flyer and hand it out locally.", "Use free tools only; I have no money to spend.").some(x => x.includes("zero-budget constraint"))));
+test("does not flag a warning against printing in a zero-budget plan", () => assert.deepEqual(findBusinessPolicyViolations("Do not print flyers; share a digital post instead.", "Use free tools only; I have no money to spend."), []));
+test("flags paid services in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Hire a marketing service to promote the business.", "No budget; use free tools only.").some(x => x.includes("zero-budget constraint"))));
+test("flags an incomplete Delta finding", () => assert.ok(findAgentFormatViolations("1. Verify the active account before Day\n2. Track inquiries daily.\n3. Review bookings at the end.", "delta").some(x => x.includes("finding 1 appears incomplete"))));
+test("accepts three complete Delta findings", () => assert.deepEqual(findAgentFormatViolations("1. Verify the account before posting.\n2. Track inquiries in a free notes app.\n3. Review confirmed bookings at the end.", "delta"), []));
