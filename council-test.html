@@ -42,9 +42,16 @@ run.addEventListener("click", async () => {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || ("Request failed with HTTP " + response.status));
-    statusBox.textContent = data.complete === false
-      ? "Council returned a partial result. Empty agent(s): " + ((data.missing_agents || []).join(", ") || "unknown") + ". Check the cards below; this run is not complete."
-      : "Council completed successfully.";
+    const agents = Array.isArray(data.agents) ? data.agents : [];
+    const missing = Array.isArray(data.missing_agents) ? data.missing_agents : [];
+    const qualityWarnings = Array.isArray(data.quality_warnings) ? data.quality_warnings : [];
+    const flaggedAgents = agents.filter(agent => agent.quality_flagged).map(agent => agent.name || agent.id || "unknown");
+    const allThreePresent = ["quinn", "delta", "sol"].every(id => agents.some(agent => agent.id === id && typeof agent.response === "string" && agent.response.trim()));
+    const verifiedComplete = data.complete === true && missing.length === 0 && qualityWarnings.length === 0 && flaggedAgents.length === 0 && allThreePresent;
+    statusBox.textContent = verifiedComplete
+      ? "Council completed. All three agents returned responses and the server reported no quality flags."
+      : "COUNCIL NOT VERIFIED: this run is incomplete or failed a quality check. Do not treat its recommendations as approved. Empty agent(s): " + (missing.join(", ") || "none reported") + ". Quality-flagged agent(s): " + ([...new Set([...qualityWarnings, ...flaggedAgents])].join(", ") || "none reported") + ".";
+
     for (const agent of (data.agents || [])) {
       const card = document.createElement("article");
       card.className = "agent";
