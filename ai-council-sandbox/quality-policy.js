@@ -64,20 +64,23 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     if (freeWork && !evaluatePromotion) violations.push("free work offered in exchange for a testimonial");
   }
   // A zero-budget constraint is stricter than merely avoiding paid ads: flag actions that predictably require supplies, printing, postage, fuel, or purchases. Warnings against these actions are allowed.
-  // Explicitly prohibit free-work offers when the user bans free services, samples, demos, or giveaways.
-  const userBansFreeWork = /\\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\\b[^.!?]{0,500}\\b(?:free services?|free samples?|free demos?|free washes?|free car details?|giveaways?)\\b/i.test(String(userQuestion));
+  // Enforce explicit user bans on free offers, including estimates described as "free" or "no-obligation".
+  // These checks intentionally scan the full response and fail closed; a policy violation must not be approved.
+  const userBansFreeWork = /\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\b[^.!?]{0,700}\b(?:free services?|free samples?|free demos?|free estimates?|no[- ]obligation estimates?|free washes?|free car details?|giveaways?|anything that costs money)\b/i.test(String(userQuestion));
   if (userBansFreeWork) {
-    const freeOffer = /\\b(?:offer|give|provide|include|promise|advertise|promote|let|allow)\\b[^.!?]{0,120}\\b(?:free (?:quick[- ]wash|wash|car wash|detail(?:ing)?|service|sample|demo|first[- ]time detail)|first \\d+ replies? get|at no extra cost)\\b|\\b(?:free (?:quick[- ]wash|wash|car wash|detail(?:ing)?|service|sample|demo|first[- ]time detail)|first \\d+ replies? get)\\b[^.!?]{0,100}\\b(?:offer|give|provide|promote|post|advertise|reply|customer|people|client)\\b/i;
+    const freeOffer = /\b(?:free|complimentary|no[- ]obligation)\s+(?:(?:quick|short|brief|on[- ]site|initial|first[- ]time|car|vehicle)\s+){0,3}(?:estimates?|quotes?|consultations?|assessments?|inspections?|washes?|details?|detailing|services?|samples?|demos?|work|labor|labour)\b|\b(?:offer|give|provide|include|promise|advertise|promote|perform|do)\b[^.!?]{0,140}\b(?:free|complimentary|no[- ]obligation)\b[^.!?]{0,100}\b(?:estimate|quote|consultation|assessment|inspection|wash|detail|service|sample|demo|work)\b|\bfirst\s+\d+\s+(?:replies|respondents|customers|people|clients)\b[^.!?]{0,100}\b(?:free|complimentary|no[- ]cost|at no extra cost)\b/i;
     for (const sentence of sentences) {
       const match = freeOffer.exec(sentence);
       if (match && !isNegatedBefore(sentence, match.index)) {
-        violations.push("user-prohibited free service or giveaway");
+        violations.push("user-prohibited free service, estimate, or giveaway");
       }
     }
   }
-  // Never recommend logging names, contact details, vehicle identifiers, or other personal data unless the user explicitly requires it.
-  if (!/\\b(?:collect|record|store|log|track)\\b[^.!?]{0,100}\\b(?:personal information|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\\b/i.test(String(userQuestion))) {
-    const personalLog = /\\b(?:spreadsheet|sheet|table|tracker|log)\\b[^.!?]{0,100}\\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?)\\b|\\b(?:record|collect|store|log)\\b[^.!?]{0,80}\\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?)\\b/i;
+  // Never recommend logging names, contact details, vehicle identifiers, or other identifying details
+  // unless the user explicitly asks for that data collection.
+  const userRequestsPersonalData = /\b(?:collect|record|store|log|track)\b[^.!?]{0,100}\b(?:personal information|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\b/i.test(String(userQuestion));
+  if (!userRequestsPersonalData) {
+    const personalLog = /\b(?:spreadsheet|sheet|table|tracker|log|record|collect|store|track)\b[^.!?]{0,120}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?|personal information)\b|\b(?:record|collect|store|log|track)\b[^.!?]{0,80}\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?|personal information)\b/i;
     for (const sentence of sentences) {
       const match = personalLog.exec(sentence);
       if (match && !isNegatedBefore(sentence, match.index)) {
