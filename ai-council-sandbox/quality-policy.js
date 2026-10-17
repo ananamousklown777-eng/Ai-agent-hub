@@ -64,6 +64,27 @@ export function findBusinessPolicyViolations(text, userQuestion = "") {
     if (freeWork && !evaluatePromotion) violations.push("free work offered in exchange for a testimonial");
   }
   // A zero-budget constraint is stricter than merely avoiding paid ads: flag actions that predictably require supplies, printing, postage, fuel, or purchases. Warnings against these actions are allowed.
+  // Explicitly prohibit free-work offers when the user bans free services, samples, demos, or giveaways.
+  const userBansFreeWork = /\\b(?:do not|don't|never|avoid|must not|prohibit|forbid)\\b[^.!?]{0,500}\\b(?:free services?|free samples?|free demos?|free washes?|free car details?|giveaways?)\\b/i.test(String(userQuestion));
+  if (userBansFreeWork) {
+    const freeOffer = /\\b(?:offer|give|provide|include|promise|advertise|promote|let|allow)\\b[^.!?]{0,120}\\b(?:free (?:quick[- ]wash|wash|car wash|detail(?:ing)?|service|sample|demo|first[- ]time detail)|first \\d+ replies? get|at no extra cost)\\b|\\b(?:free (?:quick[- ]wash|wash|car wash|detail(?:ing)?|service|sample|demo|first[- ]time detail)|first \\d+ replies? get)\\b[^.!?]{0,100}\\b(?:offer|give|provide|promote|post|advertise|reply|customer|people|client)\\b/i;
+    for (const sentence of sentences) {
+      const match = freeOffer.exec(sentence);
+      if (match && !isNegatedBefore(sentence, match.index)) {
+        violations.push("user-prohibited free service or giveaway");
+      }
+    }
+  }
+  // Never recommend logging names, contact details, vehicle identifiers, or other personal data unless the user explicitly requires it.
+  if (!/\\b(?:collect|record|store|log|track)\\b[^.!?]{0,100}\\b(?:personal information|contact details|customer names|phone numbers|email addresses|vehicle registration|license plates)\\b/i.test(String(userQuestion))) {
+    const personalLog = /\\b(?:spreadsheet|sheet|table|tracker|log)\\b[^.!?]{0,100}\\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?)\\b|\\b(?:record|collect|store|log)\\b[^.!?]{0,80}\\b(?:customer names?|contact details?|phone numbers?|email addresses?|vehicle (?:make|model|details|registration|license plates?)|inquiry details?)\\b/i;
+    for (const sentence of sentences) {
+      const match = personalLog.exec(sentence);
+      if (match && !isNegatedBefore(sentence, match.index)) {
+        violations.push("unnecessary collection of personal or identifying details");
+      }
+    }
+  }
   const noSpend = /\b(?:free tools? only|no money to spend|no budget|zero[- ]budget|without spending (?:any )?money|anything that requires spending money|do not spend money|don't spend money|no-cost only|at no cost)\b/i.test(String(userQuestion));
   if (noSpend) {
     const costActions = [
