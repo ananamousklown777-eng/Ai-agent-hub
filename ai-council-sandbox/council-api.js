@@ -116,15 +116,22 @@ async function askBusinessSafe(system, user, agentId = "") {
 }
 
 async function runAgentSafely(system, user, agentId) {
+  const name = roles.find(role => role.id === agentId)?.name || agentId;
   try {
     return await askBusinessSafe(system, user, agentId);
   } catch (e) {
-    // A single truncated agent should not discard the work of every other agent.
-    if (!/output limit/i.test(e.message || "")) throw e;
-    const name = roles.find(role => role.id === agentId)?.name || agentId;
-    console.warn("AI Council agent reached output limit:", agentId);
+    // Isolate failures per agent so a provider hiccup or rate limit does not erase the other agents' completed work.
+    const message = String(e?.message || "");
+    const reason = /429|rate.?limit|too many requests/i.test(message)
+      ? "the AI provider rate-limited this request"
+      : /AbortError|timed? ?out|timeout/i.test(message)
+        ? "the request timed out"
+        : /output limit|finish_reason.*length/i.test(message)
+          ? "the model reached its output limit"
+          : "the AI provider could not complete the request";
+    console.warn("AI Council agent failed:", agentId, reason);
     return {
-      response: name + " could not finish this contribution because the model reached its output limit. This result is incomplete; rerun with a shorter question if this contribution is needed.",
+      response: name + " could not complete this contribution because " + reason + ". This contribution is incomplete; do not treat it as a recommendation. The other agents' responses, if present, are still available for review.",
       qualityFlagged: true
     };
   }
