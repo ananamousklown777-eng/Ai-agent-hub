@@ -71,3 +71,19 @@ test("accepts three complete Delta findings", () => assert.deepEqual(findAgentFo
 test("flags physical flyer distribution in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Hand out flyers in nearby neighborhoods.", "Free tools only; no money to spend.").some(x => x.includes("zero-budget constraint"))));
 
 test("flags fuel-dependent outreach in a zero-budget plan", () => assert.ok(findBusinessPolicyViolations("Drive through nearby residential areas to find prospects.", "Free tools only; no money to spend.").some(x => x.includes("zero-budget constraint"))));
+
+
+const strictQuestion = "I run a local car detailing business and have no money to spend on marketing. Create a practical 7-day plan to help me aim for three new paying customers using only free tools. Track inquiries and bookings without collecting personal information. Do not recommend paid advertising, printing flyers, physical flyer distribution, discounts, free services, free estimates, free consultations, giveaways, or anything that costs money. Do not assume I have a website, social media following, or customer list.";
+
+test("flags no-cost wording for a service explicitly prohibited by the user", () => {
+  assert.ok(findBusinessPolicyViolations("Offer a mobile wash at no cost to the customer's location.", strictQuestion).some(x => x.includes("no-cost")));
+});
+test("flags asking for a phone number or email when personal information is forbidden", () => {
+  assert.ok(findBusinessPolicyViolations("Ask each interested customer for a phone number or email address to confirm the booking.", strictQuestion).some(x => x.includes("personal contact information")));
+});
+test("flags logging contact details despite a promise not to store names", () => {
+  assert.ok(findBusinessPolicyViolations("Use a private sheet with Contact Method (phone or email), but do not store names.", strictQuestion).some(x => x.includes("personal or identifying details") || x.includes("personal contact information")));
+});
+test("does not flag a clear warning against no-cost service offers", () => {
+  assert.deepEqual(findBusinessPolicyViolations("Do not offer a wash at no cost to the customer.", strictQuestion), []);
+});
