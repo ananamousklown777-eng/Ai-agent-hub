@@ -78,15 +78,26 @@ async function ask(system, user, maxTokens = 1000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 45000);
   try {
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST", signal: controller.signal,
-      headers: { authorization: "Bearer " + API_KEY, "content-type": "application/json" },
-      body: JSON.stringify({ model: MODEL, temperature: 0.3, max_completion_tokens: maxTokens, reasoning_effort: "low", include_reasoning: false, messages: [
-        { role: "system", content: system },
-        { role: "user", content: user }
-      ] })
-    });
-    const data = await r.json().catch(() => ({}));
+    const requestBody = JSON.stringify({ model: MODEL, temperature: 0.3, max_completion_tokens: maxTokens, reasoning_effort: "low", include_reasoning: false, messages: [
+      { role: "system", content: system },
+      { role: "user", content: user }
+    ] });
+    let r;
+    let data;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST", signal: controller.signal,
+        headers: { authorization: "Bearer " + API_KEY, "content-type": "application/json" },
+        body: requestBody
+      });
+      data = await r.json().catch(() => ({}));
+      if (r.status === 429 && attempt === 0 && /rate.?limit|too many requests/i.test(data.error?.message || "")) {
+        // Groq can return short transient rate limits. Wait briefly and retry once, never loop indefinitely.
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        continue;
+      }
+      break;
+    }
     if (!r.ok) throw new Error(data.error?.message || "AI provider returned HTTP " + r.status + ".");
     const choice = data.choices?.[0];
     const content = choice?.message?.content;
