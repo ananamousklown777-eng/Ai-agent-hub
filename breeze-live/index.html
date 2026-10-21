@@ -85,6 +85,7 @@ const speakingLabel=document.getElementById("speakingLabel");
 const liveAvatarVideo=document.getElementById("liveAvatarVideo");
 const startLiveAvatarButton=document.getElementById("startLiveAvatar");
 let liveAvatarSession=null;
+let liveAvatarStartPromise=null;
 let lastRoomMessage=0;
 const sessionId=localStorage.getItem("breezeSessionId")||crypto.randomUUID();
 localStorage.setItem("breezeSessionId",sessionId);
@@ -244,6 +245,17 @@ function setSpeaking(active){
 }
 
 async function startLiveAvatar(){
+  if(liveAvatarSession) return;
+  if(liveAvatarStartPromise) return liveAvatarStartPromise;
+  liveAvatarStartPromise=startLiveAvatarAttempt();
+  try{
+    await liveAvatarStartPromise;
+  }finally{
+    liveAvatarStartPromise=null;
+  }
+}
+
+async function startLiveAvatarAttempt(){
   if(liveAvatarSession) return;
   startLiveAvatarButton.disabled=true;
   startLiveAvatarButton.textContent="Starting realistic Breeze…";
@@ -450,6 +462,11 @@ input.addEventListener("keydown",e=>{if(e.key==="Enter")send();});
 checkBackend();
 syncRoom();
 setInterval(syncRoom,1500);
+// Attempt to start the realistic avatar automatically when the page opens.
+// If the browser blocks startup, the visible button remains available as a fallback.
+setTimeout(()=>{
+  if(!liveAvatarSession && !liveAvatarStartPromise) startLiveAvatar();
+},900);
 </script>
 </body>
 </html>
