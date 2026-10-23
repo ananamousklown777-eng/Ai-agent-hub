@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI Council is an experimental three-agent business decision-support tool for small businesses.">
+  <title>AI Council | Business Decision Support</title>
+  <style>
+    :root { color-scheme: light dark; --ink:#172033; --muted:#586174; --paper:#f5f7fb; --card:#fff; --accent:#2859c5; --line:#dce2ee; }
+    @media (prefers-color-scheme: dark) { :root { --ink:#edf1fb; --muted:#b4bfd3; --paper:#101522; --card:#192235; --accent:#9bb8ff; --line:#344158; } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif; }
+    main { max-width:850px; margin:0 auto; padding:28px 18px 56px; }
+    .eyebrow { font-size:.85rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+    h1 { line-height:1.12; font-size:clamp(2.1rem,7vw,3.5rem); margin:.5rem 0 1rem; }
+    h2 { line-height:1.2; margin-top:1.8rem; }
+    p { max-width:68ch; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px; margin:18px 0; }
+    .status { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:.86rem; font-weight:700; }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin:22px 0; }
+    a.button { display:inline-block; padding:11px 16px; border-radius:10px; border:1px solid var(--accent); color:var(--accent); font-weight:700; text-decoration:none; }
+    a.primary { background:var(--accent); color:white; }
+    ul { padding-left:1.3rem; }
+    .muted { color:var(--muted); }
+    footer { border-top:1px solid var(--line); margin-top:30px; padding-top:18px; color:var(--muted); font-size:.9rem; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">AI Agent Hub · Business tools</div>
+  <h1>Think through your next business decision.</h1>
+  <p>AI Council is an experimental decision-support tool for small businesses. Three AI roles look at a business question from different angles and help turn it into possible next steps.</p>
+  <p><span class="status">Prototype · Controlled testing</span></p>
+  <div class="actions">
+    <a class="button primary" href="./business-assistant.html">Open the business assistant</a>
+    <a class="button" href="./council-quality-test.html">View quality-test page</a>
+  </div>
+  <section class="card" aria-labelledby="roles">
+    <h2 id="roles">Three perspectives, one discussion</h2>
+    <ul>
+      <li><strong>Quinn</strong> proposes a plan and organizes the options.</li>
+      <li><strong>Delta</strong> challenges assumptions and highlights risks.</li>
+      <li><strong>Sol</strong> turns the discussion into practical next steps.</li>
+    </ul>
+    <p class="muted">AI-generated suggestions can be incomplete or wrong. Review the advice and use your own judgment; the Council does not guarantee business results or replace qualified professional advice.</p>
+  </section>
+  <section class="card" aria-labelledby="status">
+    <h2 id="status">Current availability</h2>
+    <p>This project is still in controlled testing. It is <strong>not currently offered for paid purchase</strong>. Public registration, checkout, pricing, and automated paid-access delivery have not been established, so this page does not accept orders.</p>
+    <p>Some assistant access may require a private test key. Do not post or share that key. Do not submit passwords, payment information, personal customer data, or confidential business information.</p>
+  </section>
+  <section aria-labelledby="how">
+    <h2 id="how">What testing covers</h2>
+    <p>Automated checks cover selected response and policy rules. Passing tests or seeing a healthy status response does not guarantee that each AI answer is accurate, complete, or available every time.</p>
+    <p>Before a public paid launch, the project still needs reliable end-to-end live testing, clear pricing and delivery, customer-specific access and usage controls, Council-specific privacy terms, and a support process.</p>
+  </section>
+  <footer>
+    <p>AI Council · Experimental business decision support</p>
+    <p><a href="https://github.com/ananamousklown777-eng/Ai-agent-hub/blob/main/ai-council-sandbox/README.md">Setup and project status</a> · <a href="https://freemind-counsil.onrender.com/health">Backend status endpoint</a></p>
+    <p><a href="./index.html">Back to AI Agent Hub</a></p>
+  </footer>
+</main>
+</body>
+</html>
