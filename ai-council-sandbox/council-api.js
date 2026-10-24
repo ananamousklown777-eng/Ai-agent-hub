@@ -181,7 +181,7 @@ const server = http.createServer(async (req,res) => {
     res.writeHead(204);
     return res.end();
   }
-  if (req.method === "GET" && req.url === "/health") return send(res,200,{ok:true,service:"ai-council-sandbox",agents:3,model:MODEL,configured:Boolean(API_KEY && ACCESS_KEY)});
+  if (req.method === "GET" && req.url.split("?")[0] === "/health") return send(res,200,{ok:true,service:"ai-council-sandbox",agents:3,model:MODEL,configured:Boolean(API_KEY && ACCESS_KEY)});
   if (req.method !== "POST" || req.url !== "/council") return send(res,404,{error:"Not found"});
   if (!API_KEY || !ACCESS_KEY) return send(res,503,{error:"Server setup is incomplete. Configure GROQ_API_KEY and COUNCIL_ACCESS_KEY in environment variables."});
   if (req.headers["x-council-key"] !== ACCESS_KEY) return send(res,401,{error:"Missing or invalid Council access key."});
