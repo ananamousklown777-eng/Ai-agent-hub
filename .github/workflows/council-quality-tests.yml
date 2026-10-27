@@ -49,7 +49,7 @@ jobs:
           node --check /tmp/business-assistant.js
           node --check /tmp/council-quality-test.js
           node --check /tmp/council-test.js
-live-health:
+  live-health:
     runs-on: ubuntu-latest
     steps:
       - name: Check live Council backend health
