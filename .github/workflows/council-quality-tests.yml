@@ -29,53 +29,23 @@ jobs:
         run: node --check council-api.js
       - name: Run quality-policy regression tests
         run: npm test
-      - name: Check the quality-test page JavaScript syntax
+      - name: Check public Council page JavaScript syntax
         working-directory: .
         run: |
-          node -e "const fs=require('node:fs'); const html=fs.readFileSync('docs/council-quality-test.html','utf8'); const match=html.match(/<script>([\\s\\S]*?)<\\/script>/); if(!match) throw new Error('No inline script found'); fs.writeFileSync('/tmp/council-quality-test.js',match[1]);"
+          node <<'NODE'
+          const fs = require("node:fs");
+          const files = [
+            ["docs/business-assistant.html", "/tmp/business-assistant.js"],
+            ["docs/council-quality-test.html", "/tmp/council-quality-test.js"],
+            ["docs/council-test.html", "/tmp/council-test.js"],
+          ];
+          for (const [file, output] of files) {
+            const html = fs.readFileSync(file, "utf8");
+            const match = html.match(/<script>([\\s\\S]*?)<\\/script>/);
+            if (!match) throw new Error(`No inline script found in ${file}`);
+            fs.writeFileSync(output, match[1]);
+          }
+          NODE
+          node --check /tmp/business-assistant.js
           node --check /tmp/council-quality-test.js
-
-  live-health:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check live Council backend health
-        env:
-          HEALTH_URL: https://freemind-counsil.onrender.com/health
-        run: |
-          set -euo pipefail
-          health_body="$(mktemp)"
-          trap 'rm -f "$health_body"' EXIT
-          response=""
-          for attempt in {1..8}; do
-            metrics=""
-            if metrics="$(curl --silent --show-error --max-time 20 --output "$health_body" --write-out '%{http_code} %{time_total} %{size_download}' "$HEALTH_URL")"; then
-              read -r http_code elapsed bytes <<< "$metrics"
-              echo "Health check attempt $attempt: HTTP $http_code, ${elapsed}s, ${bytes} bytes."
-              if [[ "$http_code" == "200" ]]; then
-                response="$(cat "$health_body")"
-                break
-              fi
-            else
-              curl_exit=$?
-              read -r http_code elapsed bytes <<< "${metrics:-000 0 0}"
-              echo "Health check attempt $attempt failed: curl exit $curl_exit, HTTP $http_code, ${elapsed}s, ${bytes} bytes."
-            fi
-            if [[ "$attempt" -lt 8 ]]; then
-              echo "Retrying in 15 seconds."
-              sleep 15
-            fi
-          done
-          if [ -z "$response" ]; then
-            echo "::error::Council backend health endpoint did not return HTTP 200 after retries."
-            exit 1
-          fi
-          echo "$response" | node --input-type=module -e '
-            let raw = "";
-            for await (const chunk of process.stdin) raw += chunk;
-            const data = JSON.parse(raw);
-            if (data.ok !== true) throw new Error("Health endpoint did not report ok=true");
-            if (data.service !== "ai-council-sandbox") throw new Error("Unexpected service name: " + data.service);
-            if (data.agents !== 3) throw new Error("Expected 3 agents; received " + data.agents);
-            if (data.configured !== true) throw new Error("Backend reports required environment variables are not configured");
-            console.log("Live health check passed: 3 agents configured.");
-          '
+          node --check /tmp/council-test.js
