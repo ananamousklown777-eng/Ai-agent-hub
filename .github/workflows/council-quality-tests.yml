@@ -41,7 +41,7 @@ jobs:
           ];
           for (const [file, output] of files) {
             const html = fs.readFileSync(file, "utf8");
-            const match = html.match(/<script>([\\s\\S]*?)<\\/script>/);
+            const match = html.match(/<script>([\s\S]*?)<\/script>/);
             if (!match) throw new Error(`No inline script found in ${file}`);
             fs.writeFileSync(output, match[1]);
           }
