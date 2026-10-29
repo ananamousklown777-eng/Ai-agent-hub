@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - "ai-council-sandbox/**"
+      - "docs/**"
       - ".github/workflows/council-quality-tests.yml"
   pull_request:
     paths:
       - "ai-council-sandbox/**"
+      - "docs/**"
       - ".github/workflows/council-quality-tests.yml"
   workflow_dispatch:
   schedule:
