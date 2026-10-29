@@ -116,8 +116,22 @@ $("run").addEventListener("click",async()=>{
  $("run").disabled=true;
  $("status").textContent="The Council is thinking. The free service may take up to a minute to wake up.";
  try{
-  const response=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json","x-council-key":key},body:JSON.stringify({question})});
-  const data=await response.json().catch(()=>({}));
+  let response, data = {};
+  const requestBody = JSON.stringify({question});
+  for(let attempt=1;attempt<=4;attempt++){
+   response=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json","x-council-key":key},body:requestBody});
+   const contentType=response.headers.get("content-type")||"";
+   const responseText=await response.text();
+   const renderStarting=response.status===503&&/text\/html/i.test(contentType)&&/Application loading/i.test(responseText);
+   if(renderStarting&&attempt<4){
+    $( "status" ).textContent="Render is still waking up. Retrying automatically ("+attempt+"/4). Please keep this page open.";
+    await new Promise(resolve=>setTimeout(resolve,15000));
+    continue;
+   }
+   try{data=JSON.parse(responseText);}catch{data={};}
+   if(renderStarting)throw new Error("Render is still starting after four attempts. Wait about a minute and try again.");
+   break;
+  }
   if(!response.ok)throw new Error(data.error||("Request failed with HTTP "+response.status));
   const agents=data.agents||[];
   $("status").textContent=data.complete===false?"QUALITY CHECK FAILED OR INCOMPLETE. Missing response(s): "+((data.missing_agents||[]).join(", ")||"none reported")+". Treat this result as incomplete.":"Council responses completed and passed the configured backend quality checks. This does not guarantee advice is error-free; verify important claims.";
