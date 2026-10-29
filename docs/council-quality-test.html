@@ -25,6 +25,34 @@
 <p class="note small"><a href="council.html">AI Council overview</a> · <a href="business-assistant.html">Back to Business Assistant</a></p>
 <script>
 const endpoint="https://freemind-counsil.onrender.com/council";
+
+async function fetchCouncilWithStartupRetry(key, question, onRetry) {
+  const body = JSON.stringify({question});
+  let response, data = {};
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {"content-type":"application/json","x-council-key":key},
+      body
+    });
+    const contentType = response.headers.get("content-type") || "";
+    const responseText = await response.text();
+    const renderStarting = response.status === 503 &&
+      /text\/html/i.test(contentType) && /Application loading/i.test(responseText);
+    if (renderStarting && attempt < 4) {
+      onRetry(attempt);
+      await new Promise(resolve => setTimeout(resolve, 15000));
+      continue;
+    }
+    try { data = JSON.parse(responseText); } catch { data = {}; }
+    if (renderStarting) {
+      throw new Error("Render is still starting after four attempts. Wait about a minute and try again.");
+    }
+    break;
+  }
+  return {response, data};
+}
+
 const promptText = "I run a small car-detailing business and have no advertising budget. I need to attract more paying customers using free tools only. Recommend three practical first steps. Do not suggest free car details, free services or inspections, giveaways, discounts or coupons, paid advertising, free photos in exchange for promotion, or referral rewards. Do not recommend or mention thank-you notes or referral-related actions, including asking for referrals or tracking referrals. Do not invent prices, results, conversion rates, or timelines. Separate facts from assumptions, identify risks, and explain how I can measure which actions bring in paying customers.\n\nRules: Use supplied facts and separate facts, assumptions, and unknowns. Never invent prices, costs, margins, demand, statistics, conversion rates, numeric weekly targets, or timelines. Do not assume a website, social account, customer list, storefront, or Google Business Profile eligibility. Suggest a profile only if an in-person business may qualify, and say to verify eligibility. Reviews must be voluntary and honest from genuine customers only, with no reward or pressure; never ask non-customers. Do not suggest discounts or coupons, paid promotions, free services/samples/demos/inspections, giveaways, commissions, referral rewards, or cross-promotions. Do not recommend or mention thank-you notes or referral-related actions, including asking for referrals or tracking referrals. Prefer reversible no-cost steps when costs or margins are unknown. No tables; ordinary Markdown. Delta must give a correction for each key weakness. Sol must use the five required headings and exactly three numbered actions.";
 const $=id=>document.getElementById(id);
 function findTestPolicyViolations(agents){
@@ -59,8 +87,9 @@ $("run").addEventListener("click",async()=>{
  $("run").disabled=true;$("results").replaceChildren();
  $("status").textContent="Running the saved test. The free service may take a minute to wake up.";
  try{
-  const response=await fetch(endpoint,{method:"POST",headers:{"content-type":"application/json","x-council-key":key},body:JSON.stringify({question:promptText})});
-  const data=await response.json().catch(()=>({}));
+  const {response,data}=await fetchCouncilWithStartupRetry(key,promptText,attempt=>{
+   $("status").textContent="Render is still waking up. Retrying automatically ("+attempt+"/4). Please keep this page open.";
+  });
   if(!response.ok)throw new Error(data.error||("Request failed with HTTP "+response.status));
   const agents=Array.isArray(data.agents)?data.agents:[];
   const warnings=Array.isArray(data.quality_warnings)?data.quality_warnings:[];
