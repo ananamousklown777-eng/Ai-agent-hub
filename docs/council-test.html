@@ -24,6 +24,34 @@
 </main>
 <script>
 const endpoint = "https://freemind-counsil.onrender.com/council";
+
+async function fetchCouncilWithStartupRetry(key, question, onRetry) {
+  const body = JSON.stringify({question});
+  let response, data = {};
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {"content-type":"application/json","x-council-key":key},
+      body
+    });
+    const contentType = response.headers.get("content-type") || "";
+    const responseText = await response.text();
+    const renderStarting = response.status === 503 &&
+      /text\/html/i.test(contentType) && /Application loading/i.test(responseText);
+    if (renderStarting && attempt < 4) {
+      onRetry(attempt);
+      await new Promise(resolve => setTimeout(resolve, 15000));
+      continue;
+    }
+    try { data = JSON.parse(responseText); } catch { data = {}; }
+    if (renderStarting) {
+      throw new Error("Render is still starting after four attempts. Wait about a minute and try again.");
+    }
+    break;
+  }
+  return {response, data};
+}
+
 const run = document.getElementById("run");
 const statusBox = document.getElementById("status");
 const results = document.getElementById("results");
@@ -35,12 +63,9 @@ run.addEventListener("click", async () => {
   run.disabled = true;
   statusBox.textContent = "Sending the question to the Council. The free service may need up to a minute to wake up.";
   try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {"content-type":"application/json","x-council-key":key},
-      body: JSON.stringify({question})
+    const {response, data} = await fetchCouncilWithStartupRetry(key, question, attempt => {
+      statusBox.textContent = "Render is still waking up. Retrying automatically (" + attempt + "/4). Please keep this page open.";
     });
-    const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || ("Request failed with HTTP " + response.status));
     const missingAgents = Array.isArray(data.missing_agents) ? data.missing_agents : [];
     const qualityWarnings = Array.isArray(data.quality_warnings) ? data.quality_warnings : [];
