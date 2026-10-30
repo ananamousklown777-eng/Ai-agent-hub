@@ -20,7 +20,7 @@
 <p class="hint">Specific details help. Don't include passwords, customer personal information, or other sensitive data.</p>
 <label for="access">Council access key</label>
 <input id="access" type="password" autocomplete="off" placeholder="Paste your COUNCIL_ACCESS_KEY" aria-describedby="keyhelp">
-<div id="keyhelp" class="hint">Used only for this request. This page does not save it.</div>
+<div id="keyhelp" class="hint">Used only for this request; this page does not save it. Prototype access is restricted to invited testers. There is no public sign-up or paid plan yet. Never share the key.</div>
 <div class="grid">
 <div><label for="business">Business type</label>
 <select id="business"><option value="Local service business">Local service business</option><option value="Retail shop">Retail shop</option><option value="Restaurant or food business">Restaurant or food business</option><option value="Online business">Online business</option><option value="Freelancer or solo business">Freelancer or solo business</option><option value="Other or not decided">Other / still planning</option></select></div>
@@ -133,9 +133,25 @@ $("run").addEventListener("click",async()=>{
    break;
   }
   if(!response.ok)throw new Error(data.error||("Request failed with HTTP "+response.status));
-  const agents=data.agents||[];
-  $("status").textContent=data.complete===false?"QUALITY CHECK FAILED OR INCOMPLETE. Missing response(s): "+((data.missing_agents||[]).join(", ")||"none reported")+". Treat this result as incomplete.":"Council responses completed and passed the configured backend quality checks. This does not guarantee advice is error-free; verify important claims.";
-  if((data.quality_warnings||[]).length)$("status").textContent+=" Quality check withheld an unsafe or unsupported response from: "+data.quality_warnings.join(", ")+". Treat that agent as incomplete.";
+  const agents=Array.isArray(data.agents)?data.agents:[];
+  const missing=Array.isArray(data.missing_agents)?data.missing_agents:[];
+  const qualityWarnings=Array.isArray(data.quality_warnings)?data.quality_warnings:[];
+  const flaggedAgents=agents.filter(agent=>agent.quality_flagged).map(agent=>agent.id||agent.name||"unknown");
+  const expectedIds=["quinn","delta","sol"];
+  const missingIds=expectedIds.filter(id=>!agents.some(agent=>agent.id===id&&typeof agent.response==="string"&&agent.response.trim()));
+  const verifiedComplete=data.complete===true&&agents.length===3&&missing.length===0&&qualityWarnings.length===0&&flaggedAgents.length===0&&missingIds.length===0;
+  if(verifiedComplete){
+   $("status").textContent="Council completed with all three agent responses and no configured quality flags. This does not guarantee advice is error-free; verify important claims.";
+  }else{
+   const problems=[];
+   if(data.complete!==true)problems.push("the server did not confirm completion");
+   if(agents.length!==3)problems.push("expected 3 agents, received "+agents.length);
+   if(missing.length)problems.push("API missing: "+missing.join(", "));
+   if(missingIds.length)problems.push("missing or empty response(s): "+missingIds.join(", "));
+   if(qualityWarnings.length)problems.push("backend quality flags: "+qualityWarnings.join(", "));
+   if(flaggedAgents.length)problems.push("quality-flagged agent(s): "+flaggedAgents.join(", "));
+   $("status").textContent="COUNCIL NOT VERIFIED: "+(problems.join("; ")||"the server did not confirm a complete, validated result")+". Treat this run as incomplete.";
+  }
   const order=["Sol","Quinn","Delta"];
   agents.sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
   for(const agent of agents){
@@ -145,7 +161,7 @@ $("run").addEventListener("click",async()=>{
    const body=document.createElement("div");body.className="body";
    renderMarkdown(body,agent.response||"(No response text returned.)");
    card.append(title,body);
-   if(agent.quality_flagged){const warning=document.createElement("p");warning.className="response-note";warning.textContent="Quality check: this response was withheld because unsupported advice remained after a rewrite.";card.append(warning);}
+   if(agent.quality_flagged){const warning=document.createElement("p");warning.className="response-note";warning.textContent="This agent contribution was flagged as incomplete by the backend. Do not rely on it.";card.append(warning);}
    $("results").append(card);
   }
   if(!agents.length)$("status").textContent="The server responded, but no agent responses were returned.";
