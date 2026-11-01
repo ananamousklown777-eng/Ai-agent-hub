@@ -64,7 +64,7 @@ jobs:
           response=""
           for attempt in {1..8}; do
             metrics=""
-            if metrics="$(curl --silent --show-error --max-time 20 --output "$health_body" --write-out '%{http_code} %{time_total} %{size_download}' "$HEALTH_URL")"; then
+            if metrics="$(curl --silent --show-error --max-time 70 --output "$health_body" --write-out '%{http_code} %{time_total} %{size_download}' "$HEALTH_URL")"; then
               read -r http_code elapsed bytes <<< "$metrics"
               echo "Health check attempt $attempt: HTTP $http_code, ${elapsed}s, ${bytes} bytes."
               if [[ "$http_code" == "200" ]]; then
