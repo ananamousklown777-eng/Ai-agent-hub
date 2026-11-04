@@ -297,7 +297,8 @@ async function startLiveAvatarAttempt(){
     const attachStream = () => {
       streamReadySeen=true;
       try{
-        avatar.classList.add("live-mode");
+        // Keep the full logo visible until the live video has real dimensions.
+        // Switching earlier exposes the empty gray video element while frames load.
         liveAvatarSession.attach(liveAvatarVideo);
         liveAvatarVideo.autoplay=true;
         liveAvatarVideo.playsInline=true;
