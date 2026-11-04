@@ -1,0 +1,47 @@
+name: Prepare TikTok app icon
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/prepare-breeze-icon.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  upscale-existing-icon:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Resize the existing Breeze icon without changing its design
+        run: |
+          python -m pip install --quiet Pillow
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          source = Path("breeze-live/breeze-avatar.jpg")
+          targets = [source, Path("docs/breeze-avatar.jpg")]
+          with Image.open(source) as original:
+              image = original.convert("RGB")
+              if image.size != (1024, 1024):
+                  image = image.resize((1024, 1024), Image.Resampling.LANCZOS)
+              for target in targets:
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  image.save(target, format="JPEG", quality=95, optimize=True, progressive=True)
+          print("Prepared the same original Breeze icon at 1024 x 1024 for TikTok and the website.")
+          PY
+      - name: Commit the prepared icon files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add breeze-live/breeze-avatar.jpg docs/breeze-avatar.jpg
+          if git diff --cached --quiet; then
+            echo "Icon files already meet the required dimensions."
+          else
+            git commit -m "Prepare existing Breeze icon at TikTok required size"
+            git push
+          fi
