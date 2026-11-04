@@ -335,8 +335,16 @@ async function startLiveAvatarAttempt(){
       if(originalGetUserMedia) navigator.mediaDevices.getUserMedia=originalGetUserMedia;
     }
 
-    // In case the stream was already ready before the listener ran, retry attachment briefly.
-    attachStream();
+    // The stream_ready listener was registered before start(), so do not attach
+    // an empty video element here. Wait for the SDK's actual remote media event.
+    status.textContent="LiveAvatar session started. Waiting for the real audio/video stream…";
+    setTimeout(()=>{
+      if(!avatar.classList.contains("live-mode") && liveAvatarSession){
+        startLiveAvatarButton.disabled=false;
+        startLiveAvatarButton.textContent="Retry Breeze connection";
+        status.textContent="Breeze connected to LiveAvatar, but its media stream did not arrive. Tap Retry Breeze connection.";
+      }
+    },20000);
   }catch(error){
     liveAvatarSession=null;
     startLiveAvatarButton.disabled=false;
