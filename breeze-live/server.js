@@ -182,7 +182,6 @@ const server = http.createServer(async (req, res) => {
       } catch (profileError) {
         console.warn("TikTok profile lookup failed:", profileError?.message || profileError);
       }
-      const tokenId = tokenData.open_id || profile?.open_id || randomBytes(12).toString("hex");
       const displayName = String(profile?.display_name || "your TikTok account").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ask breeze ai - TikTok Connected</title></head><body style="font-family:system-ui;padding:32px;max-width:680px;margin:auto"><h1>TikTok connected</h1><p>Ask breeze ai successfully completed TikTok Login Kit authorization.</p><p>Connected account: <strong>${displayName}</strong></p><p>Your basic TikTok profile information was received by the Ask breeze ai backend after your consent.</p><p><a href="/">Return to Ask breeze ai</a></p></body></html>`);
