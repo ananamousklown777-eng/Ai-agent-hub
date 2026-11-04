@@ -172,13 +172,14 @@ async function send(){
     const data=await r.json();
     if(!r.ok)throw new Error(data.error||"Request failed");
     await syncRoom();
-    if(liveAvatarSession){
+    if(liveAvatarSession && avatar.classList.contains("live-mode")){
       status.textContent="Breeze is speaking…";
       await speakWithLiveAvatar(data.reply);
       status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected";
     }else{
+      // Keep spoken replies working even when the LiveAvatar media stream is unavailable.
       speak(data.reply);
-      status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected";
+      status.textContent=data.mode==="free-test"?"Breeze is running in free test mode":"Breeze is connected (browser voice fallback)";
     }
   }catch(error){
     addMessage("Breeze","I'm having trouble reaching my backend right now.","breeze");
@@ -325,24 +326,34 @@ async function startLiveAvatarAttempt(){
 
     // The official SDK emits stream_ready only after both remote audio and video tracks are available.
     liveAvatarSession.on("session.stream_ready",attachStream);
-    const originalGetUserMedia=navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices);
-    if(originalGetUserMedia){
-      navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException("Breeze text-only mode","NotAllowedError");};
-    }
-    try{
-      await liveAvatarSession.start();
-    }finally{
-      if(originalGetUserMedia) navigator.mediaDevices.getUserMedia=originalGetUserMedia;
-    }
+    // Text-only mode is already configured with defaultMuted:true.
+    // Do not override browser microphone APIs; the SDK still needs its normal
+    // media environment to establish and receive the remote LiveAvatar tracks.
+    await liveAvatarSession.start();
 
-    // The stream_ready listener was registered before start(), so do not attach
-    // an empty video element here. Wait for the SDK's actual remote media event.
+    // Check once after start in case the remote tracks arrived before the
+    // stream-ready callback was delivered. The event listener remains active
+    // and will attach again when both remote tracks are confirmed.
+    try{
+      liveAvatarSession.attach(liveAvatarVideo);
+      liveAvatarVideo.autoplay=true;
+      liveAvatarVideo.playsInline=true;
+      liveAvatarVideo.muted=false;
+      liveAvatarVideo.play().catch(()=>{});
+      verifyVideo();
+    }catch(error){
+      console.info("LiveAvatar tracks are not attached yet; waiting for stream_ready.",error?.message||error);
+    }
     status.textContent="LiveAvatar session started. Waiting for the real audio/video stream…";
-    setTimeout(()=>{
+    setTimeout(async()=>{
       if(!avatar.classList.contains("live-mode") && liveAvatarSession){
+        const failedSession=liveAvatarSession;
+        liveAvatarSession=null;
+        try{await failedSession.stop();}catch(error){console.info("Old LiveAvatar session cleanup:",error?.message||error);}
+        liveAvatarVideo.srcObject=null;
         startLiveAvatarButton.disabled=false;
         startLiveAvatarButton.textContent="Retry Breeze connection";
-        status.textContent="Breeze connected to LiveAvatar, but its media stream did not arrive. Tap Retry Breeze connection.";
+        status.textContent="LiveAvatar media did not arrive. The failed session was closed. Tap Retry Breeze connection to start a fresh session.";
       }
     },20000);
   }catch(error){
