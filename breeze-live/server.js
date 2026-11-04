@@ -19,7 +19,6 @@ const LIVEAVATAR_SANDBOX_AVATAR_ID = "65f9e3c9-d48b-4118-b73a-4ae2e3cbb8f0";
 let liveAvatarContextId = process.env.LIVEAVATAR_CONTEXT_ID || "";
 const TIKTOK_REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI || "https://ai-agent-hub-6.onrender.com/auth/tiktok/callback";
 const tiktokStates = new Map();
-const tiktokTokens = new Map();
 
 const systemPrompt = [
   "You are Breeze, the live AI host for AI Agent Hub.",
@@ -184,14 +183,6 @@ const server = http.createServer(async (req, res) => {
         console.warn("TikTok profile lookup failed:", profileError?.message || profileError);
       }
       const tokenId = tokenData.open_id || profile?.open_id || randomBytes(12).toString("hex");
-      tiktokTokens.set(tokenId, {
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        expires_in: tokenData.expires_in,
-        refresh_expires_in: tokenData.refresh_expires_in,
-        scope: tokenData.scope,
-        profile
-      });
       const displayName = String(profile?.display_name || "your TikTok account").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ask breeze ai - TikTok Connected</title></head><body style="font-family:system-ui;padding:32px;max-width:680px;margin:auto"><h1>TikTok connected</h1><p>Ask breeze ai successfully completed TikTok Login Kit authorization.</p><p>Connected account: <strong>${displayName}</strong></p><p>Your basic TikTok profile information was received by the Ask breeze ai backend after your consent.</p><p><a href="/">Return to Ask breeze ai</a></p></body></html>`);
