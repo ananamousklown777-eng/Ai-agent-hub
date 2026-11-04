@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/prepare-breeze-icon.yml"
+      - "breeze-live/server.js"
   workflow_dispatch:
 permissions:
   contents: write
@@ -35,6 +36,8 @@ jobs:
                   image.save(target, format="JPEG", quality=95, optimize=True, progressive=True)
           print("Prepared the same original Breeze icon at 1024 x 1024 for TikTok and the website.")
           PY
+      - name: Check Breeze backend JavaScript syntax
+        run: node --check breeze-live/server.js
       - name: Commit the prepared icon files
         run: |
           git config user.name "github-actions[bot]"
