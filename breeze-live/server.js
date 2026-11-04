@@ -172,16 +172,29 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, tokenResponse.status || 500, { error: tokenData?.error_description || "TikTok token exchange failed." });
         return;
       }
-      const tokenId = tokenData.open_id || randomBytes(12).toString("hex");
+      let profile = null;
+      try {
+        const profileResponse = await fetch("https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,avatar_url", {
+          headers: { Authorization: "Bearer " + tokenData.access_token }
+        });
+        const profileData = await profileResponse.json().catch(() => ({}));
+        if (profileResponse.ok) profile = profileData?.data?.user || null;
+        else console.warn("TikTok profile lookup was not available:", profileData?.error?.message || profileResponse.status);
+      } catch (profileError) {
+        console.warn("TikTok profile lookup failed:", profileError?.message || profileError);
+      }
+      const tokenId = tokenData.open_id || profile?.open_id || randomBytes(12).toString("hex");
       tiktokTokens.set(tokenId, {
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
         expires_in: tokenData.expires_in,
         refresh_expires_in: tokenData.refresh_expires_in,
-        scope: tokenData.scope
+        scope: tokenData.scope,
+        profile
       });
+      const displayName = String(profile?.display_name || "your TikTok account").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char]));
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      res.end("<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Breeze - TikTok Connected</title></head><body style=\"font-family:system-ui;padding:32px;max-width:680px;margin:auto\"><h1>TikTok connected</h1><p>Breeze successfully completed the TikTok Login Kit authorization.</p><p>The authorization tokens were received securely by the Breeze backend.</p></body></html>");
+      res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ask breeze ai - TikTok Connected</title></head><body style="font-family:system-ui;padding:32px;max-width:680px;margin:auto"><h1>TikTok connected</h1><p>Ask breeze ai successfully completed TikTok Login Kit authorization.</p><p>Connected account: <strong>${displayName}</strong></p><p>Your basic TikTok profile information was received by the Ask breeze ai backend after your consent.</p><p><a href="/">Return to Ask breeze ai</a></p></body></html>`);
     } catch (error) {
       console.error("TikTok OAuth callback error:", error?.message || error);
       sendJson(res, 500, { error: "TikTok connection could not be completed." });
