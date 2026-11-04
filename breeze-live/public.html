@@ -3,40 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Agent Hub</title>
-<meta name="description" content="AI Agent Hub helps users create and manage social media content with AI-powered workflows.">
+<title>Ask breeze ai | AI host and audience chat</title>
+<meta name="description" content="Ask breeze ai is an AI host experience with audience-style chat, AI-generated replies, browser voice features, and an animated digital avatar.">
+<link rel="icon" type="image/jpeg" href="/breeze-avatar.jpg">
+<meta name="theme-color" content="#0b1020">
 <style>
-body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:#0b1020;color:#f5f7ff;line-height:1.6}
-main{max-width:850px;margin:auto;padding:56px 24px}
-.card{background:#151c33;border:1px solid #2b3555;border-radius:20px;padding:28px;margin:20px 0}
-h1{font-size:42px;margin:0 0 8px} h2{margin-top:0}
-a{color:#9cc7ff} .button{display:inline-block;padding:12px 18px;border-radius:10px;background:#fff;color:#111;text-decoration:none;font-weight:700;margin:8px 8px 0 0}
-footer{margin-top:36px;font-size:14px;color:#b8bfd4}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:radial-gradient(circle at top,#202a62 0,#0b1020 52%,#060914 100%);color:#f5f7ff;line-height:1.65}
+main{max-width:900px;margin:auto;padding:40px 22px}
+header{display:flex;align-items:center;gap:18px;margin-bottom:28px}
+header img{width:92px;height:92px;object-fit:cover;border-radius:20px;border:1px solid #ffffff35}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.1;margin:0}
+.subtitle{color:#c8d2ff;margin:8px 0 0}
+.card{background:#151c33;border:1px solid #ffffff20;border-radius:20px;padding:24px;margin:18px 0;box-shadow:0 18px 55px #0005}
+h2{margin-top:0}
+a{color:#a9d6ff}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.button{display:inline-block;padding:12px 18px;border-radius:10px;background:#756cff;color:#fff;text-decoration:none;font-weight:700}
+footer{margin-top:30px;padding:20px 0;border-top:1px solid #ffffff25;color:#c2c9dc;font-size:14px}
+footer a{margin-right:12px}
+.note{color:#c2c9dc;font-size:14px}
 </style>
 </head>
 <body>
 <main>
-<h1>AI Agent Hub</h1>
-<p>AI-powered tools for creating, organizing, and managing social media content and live audience experiences.</p>
-
-<div class="card">
-<h2>Breeze Live</h2>
-<p>Breeze is the AI Agent Hub live host prototype. It can connect an animated AI avatar with an audience chat experience so viewers can interact with Breeze in real time.</p>
-<a class="button" href="/">Open Breeze Live</a>
-</div>
-
-<div class="card">
-<h2>TikTok Integration</h2>
-<p>AI Agent Hub can connect an authorized TikTok account using TikTok Login Kit and can send video content to TikTok as a draft through the Content Posting API. Users remain in control of reviewing and posting their content.</p>
-</div>
-
-<div class="card">
-<h2>Legal</h2>
-<p><a href="https://ananamousklown777-eng.github.io/Ai-agent-hub/">Terms of Service</a><br>
-<a href="https://ananamousklown777-eng.github.io/Ai-agent-hub/privacy.html">Privacy Policy</a></p>
-</div>
-
-<footer>AI Agent Hub • Breeze Live</footer>
+<header>
+<img src="/breeze-avatar.jpg" alt="Ask breeze ai app icon">
+<div><h1>Ask breeze ai</h1><p class="subtitle">An interactive AI host from AI Agent Hub</p></div>
+</header>
+<section class="card">
+<h2>Meet Breeze</h2>
+<p>Ask breeze ai provides an AI host experience with audience-style text chat, AI-generated replies, browser-supported voice input and playback, and an animated digital avatar. Some audience interactions may be simulated for testing.</p>
+<div class="actions"><a class="button" href="/">Open Breeze Live</a></div>
+</section>
+<section class="card">
+<h2>How it works</h2>
+<p>Visitors can enter a display name and send a message. The AI backend can generate a reply, and an animated avatar session can speak it when available. Voice features depend on browser and device support.</p>
+</section>
+<section class="card">
+<h2>TikTok integration</h2>
+<p>When enabled and approved by TikTok, Login Kit lets a user authorize basic TikTok profile information. The Content Posting API integration is intended to upload a video as a draft for the creator to review and edit in TikTok. The current prototype does not provide a verified feed of real TikTok LIVE comments and does not claim direct posting. Ask breeze ai is independent and is not affiliated with or endorsed by TikTok.</p>
+</section>
+<section class="card">
+<h2>Privacy and service information</h2>
+<p>Chat and authorization state are currently held in server memory and may not persist after a restart. Depending on features used, information may be processed by AI, avatar, hosting, browser, and TikTok providers. Please do not submit passwords, payment details, access tokens, or sensitive or confidential information.</p>
+<p class="note">The service is an experimental prototype. Features and availability may change.</p>
+</section>
+<footer>
+<strong>Ask breeze ai</strong><br>
+<a href="https://ananamousklown777-eng.github.io/Ai-agent-hub/terms.html">Terms of Service</a>
+<a href="https://ananamousklown777-eng.github.io/Ai-agent-hub/privacy-policy.html">Privacy Policy</a>
+<a href="https://ananamousklown777-eng.github.io/Ai-agent-hub/">Project information</a>
+<a href="https://github.com/ananamousklown777-eng/Ai-agent-hub/issues">Contact / Support</a>
+</footer>
 </main>
 </body>
 </html>
